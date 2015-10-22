@@ -5,79 +5,62 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 public class PostEntity {
-    public int id;
-    public int postTypeId;
-    public int parentId;
-    public int acceptedAnswerId;
-    public Date creationDate;
-    public int score;
-    public int viewCount;
-    public String body;
-    public int ownerUserId;
-    public String ownerDisplayName;
-    public int lastEditorUserId;
-    public String lastEditorUserName;
-    public Date lastEditDate;
-    public Date lastActivityDate;
-    public Date communityOwnedDate;
-    public Date closedDate;
-    public String title;
-    public String tags;
-    public int answerCount;
-    public int commentCount;
-    public int favoriteCount;
+   public int id;
+   public int postTypeId;
+   public int parentId;
+   public int acceptedAnswerId;
+   public Date creationDate;
+   public int score;
+   public int viewCount;
+   public String body;
+   public int ownerUserId;
+   public String ownerDisplayName;
+   public int lastEditorUserId;
+   public String lastEditorUserName;
+   public Date lastEditDate;
+   public Date lastActivityDate;
+   public Date communityOwnedDate;
+   public Date closedDate;
+   public String title;
+   public String tags;
+   public int answerCount;
+   public int commentCount;
+   public int favoriteCount;
 
-    public PostEntity(ResultSet inputResultSet) throws SQLException {
-	  id = inputResultSet.getInt(1);
-	  postTypeId = inputResultSet.getInt(2);
-	  parentId = inputResultSet.getInt(3);
-	  acceptedAnswerId = inputResultSet.getInt(4);
-	  creationDate = inputResultSet.getDate(5);
-	  score = inputResultSet.getInt(6);
-	  viewCount = inputResultSet.getInt(7);
-	  body = cleanText(inputResultSet.getString(8));
-	  ownerUserId = inputResultSet.getInt(9);
-	  ownerDisplayName = cleanText(inputResultSet.getString(10));
-	  lastEditorUserId = inputResultSet.getInt(11);
-	  lastEditorUserName = cleanText(inputResultSet.getString(12));
-	  lastEditDate = inputResultSet.getDate(13);
-	  lastActivityDate = inputResultSet.getDate(14);
-	  communityOwnedDate = inputResultSet.getDate(15);
-	  closedDate = inputResultSet.getDate(16);
-	  title = cleanText(inputResultSet.getString(17));
-	  tags = cleanText(inputResultSet.getString(18));
-	  answerCount = inputResultSet.getInt(19);
-	  commentCount = inputResultSet.getInt(20);
-	  favoriteCount = inputResultSet.getInt(21);
-    }
+   public PostEntity(ResultSet inputResultSet) throws SQLException {
+	  id = inputResultSet.getInt("id");
+	  postTypeId = inputResultSet.getInt("post_type_id");
+	  parentId = inputResultSet.getInt("parent_id");
+	  acceptedAnswerId = inputResultSet.getInt("accepted_answer_id");
+	  creationDate = inputResultSet.getDate("creation_date");
+	  score = inputResultSet.getInt("score");
+	  viewCount = inputResultSet.getInt("view_count");
+	  body = cleanText(inputResultSet.getString("body"));
+	  ownerUserId = inputResultSet.getInt("owner_user_id");
+	  ownerDisplayName = cleanText(inputResultSet
+			.getString("owner_display_name"));
+	  lastEditorUserId = inputResultSet.getInt("last_editor_user_id");
+	  lastEditorUserName = cleanText(inputResultSet
+			.getString("last_editor_display_name"));
+	  lastEditDate = inputResultSet.getDate("last_edit_date");
+	  lastActivityDate = inputResultSet.getDate("last_activity_date");
+	  communityOwnedDate = inputResultSet.getDate("community_owned_date");
+	  closedDate = inputResultSet.getDate("closed_date");
+	  title = cleanText(inputResultSet.getString("title"));
+	  tags = cleanText(inputResultSet.getString("tags"));
+	  answerCount = inputResultSet.getInt("answer_count");
+	  commentCount = inputResultSet.getInt("comment_count");
+	  favoriteCount = inputResultSet.getInt("favorite_count");
+   }
 
-    private static String cleanText(String inputString) {
+   private static String cleanText(String inputString) {
 	  if (inputString == null || inputString.isEmpty())
-		return inputString;
+		 return inputString;
 	  String htmlText = StringEscapeUtils.unescapeHtml4(inputString);
-	  String rawText = getTextWithoutCode(Jsoup.parse(htmlText)).trim();
-	  return rawText;
+	  return htmlText.trim();
 
-    }
-
-    private static String getTextWithoutCode(Document inputHtmlDocument) {
-	  return recursiveExtraction(inputHtmlDocument.head())
-		    + recursiveExtraction(inputHtmlDocument.body());
-    }
-
-    private static String recursiveExtraction(Element inputElement) {
-	  StringBuilder output = new StringBuilder("");
-	  if (!inputElement.tagName().equals("code")
-		    && !inputElement.ownText().isEmpty())
-		output = new StringBuilder(inputElement.ownText() + " ");
-	  for (Element child : inputElement.children())
-		output.append(recursiveExtraction(child) + " ");
-	  return output.toString();
-    }
+   }
 
 }
