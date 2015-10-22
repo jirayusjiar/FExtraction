@@ -79,7 +79,8 @@ public class FExtraction {
    public static void main(String[] args) {
 
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection, "select * from question");
+			ResultSet rs = executeQuery(dbConnection,
+				  "select * from question limit 10");
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
