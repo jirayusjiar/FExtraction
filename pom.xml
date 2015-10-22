@@ -4,4 +4,12 @@
   <artifactId>FExtraction</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>FExtraction</name>
+  <dependencies>
+    <dependency>
+		<groupId>org.postgresql</groupId>
+		<artifactId>postgresql</artifactId>
+		<version>9.3-1102-jdbc41</version>
+	</dependency>
+  
+  </dependencies>
 </project>
