@@ -5,6 +5,10 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.google.gson.Gson;
+
+import entity.PostEntity;
+
 public class FExtraction {
 
     private static Connection connectToDB() {
@@ -67,15 +71,15 @@ public class FExtraction {
 
     public static void main(String[] args) throws SQLException {
 
+	  Gson gson = new Gson();
 	  Connection dbConnection = connectToDB();
-
 	  ResultSet rs = executeQuery(dbConnection,
 		    "select * from posts limit 10");
 	  if (rs != null) {
 
 		while (rs.next()) {
-		    System.out.printf("%d\t%s\t%s\t%d\n", rs.getInt(1),
-				rs.getString(2), rs.getString(3), rs.getInt(4));
+		    PostEntity postEnt = new PostEntity(rs);
+		    System.out.println(gson.toJson(postEnt));
 		}
 
 	  }
