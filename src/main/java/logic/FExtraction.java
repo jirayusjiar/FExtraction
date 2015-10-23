@@ -82,12 +82,7 @@ public class FExtraction {
 	  System.out.println("Getting executed id");
 	  getExecuted();
 	  System.out.println("Start the execution...");
-
-	  for (int x = 0; x < 9; ++x) {
-		 System.out.println("Iteration " + x);
-		 execution(x);
-		 System.out.println("Done execution of iteration " + x);
-	  }
+	  execution();
 
    }
 
@@ -107,11 +102,9 @@ public class FExtraction {
    }
 
    // Divide dataset into 1 million questions in each execution
-   private static void execution(int index) {
+   private static void execution() {
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select * from question limit 1000000 offset "
-						+ (index * 1000000));
+			ResultSet rs = executeQuery(dbConnection, "select * from question");
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
@@ -132,31 +125,34 @@ public class FExtraction {
 			}
 			System.out.println("Finish preprocessing\nStart putting to DB");
 
-			// Insert into db
-			List<Integer> preparedIndex = new ArrayList<Integer>();
-			for (Future<ReadabilityEntity> readEnt : list) {
-			   preparedStatement.clearParameters();
-			   ReadabilityEntity entToDb = readEnt.get();
-			   preparedStatement.setInt(1, entToDb.id);
-			   preparedStatement.setInt(2, entToDb.contentLength);
-			   preparedStatement.setDouble(3, entToDb.ari);
-			   preparedStatement.setDouble(4, entToDb.colemanIndex);
-			   preparedStatement.setDouble(5, entToDb.fleschKincaid);
-			   preparedStatement.setDouble(6, entToDb.fleschReading);
-			   preparedStatement.setDouble(7, entToDb.gunningFox);
-			   preparedStatement.setDouble(8, entToDb.smog);
-			   preparedStatement.setInt(9, entToDb.sentenceCount);
-			   preparedStatement.setInt(10, entToDb.wordCount);
-			   preparedStatement.setInt(11, entToDb.nTag);
-			   preparedStatement.setDouble(12, 0.0);
-			   preparedStatement.setInt(13, entToDb.loc);
-			   preparedStatement.setBoolean(14, entToDb.hasAnswer);
-			   preparedStatement.setBoolean(15, entToDb.hasCode);
-			   preparedStatement.addBatch();
-			   preparedIndex.add(entToDb.id);
+			if (!list.isEmpty()) {
+
+			   // Insert into db
+			   List<Integer> preparedIndex = new ArrayList<Integer>();
+			   for (Future<ReadabilityEntity> readEnt : list) {
+				  preparedStatement.clearParameters();
+				  ReadabilityEntity entToDb = readEnt.get();
+				  preparedStatement.setInt(1, entToDb.id);
+				  preparedStatement.setInt(2, entToDb.contentLength);
+				  preparedStatement.setDouble(3, entToDb.ari);
+				  preparedStatement.setDouble(4, entToDb.colemanIndex);
+				  preparedStatement.setDouble(5, entToDb.fleschKincaid);
+				  preparedStatement.setDouble(6, entToDb.fleschReading);
+				  preparedStatement.setDouble(7, entToDb.gunningFox);
+				  preparedStatement.setDouble(8, entToDb.smog);
+				  preparedStatement.setInt(9, entToDb.sentenceCount);
+				  preparedStatement.setInt(10, entToDb.wordCount);
+				  preparedStatement.setInt(11, entToDb.nTag);
+				  preparedStatement.setDouble(12, 0.0);
+				  preparedStatement.setInt(13, entToDb.loc);
+				  preparedStatement.setBoolean(14, entToDb.hasAnswer);
+				  preparedStatement.setBoolean(15, entToDb.hasCode);
+				  preparedStatement.addBatch();
+				  preparedIndex.add(entToDb.id);
+			   }
+			   preparedStatement.executeBatch();
+			   executed.addAll(preparedIndex);
 			}
-			preparedStatement.executeBatch();
-			executed.addAll(preparedIndex);
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
