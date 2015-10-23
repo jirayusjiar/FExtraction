@@ -18,6 +18,8 @@ import entity.ReadabilityEntity;
 
 public class FExtraction {
 
+   private static List<Integer> executed = new ArrayList<Integer>();
+
    private static Connection connectToDB() {
 
 	  System.out.println("-------- PostgreSQL "
@@ -88,12 +90,26 @@ public class FExtraction {
 
    }
 
+   public static void getExecuted() {
+	  try (Connection dbConnection = connectToDB();
+			ResultSet rs = executeQuery(dbConnection,
+				  "select id from question_features");) {
+		 System.out.println("Finish fetching query\nStart adding executed id");
+		 if (rs != null) {
+			while (rs.next()) {
+			   executed.add(rs.getInt("id"));
+			}
+		 }
+	  } catch (Exception e) {
+		 e.printStackTrace();
+	  }
+   }
+
    // Divide dataset into 1 million questions in each execution
    private static void execution(int index) {
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(
-				  dbConnection,
-				  "select * from question where id not in (select id from question_features)limit 1000000 offset "
+			ResultSet rs = executeQuery(dbConnection,
+				  "select * from question limit 1000000 offset "
 						+ (index * 1000000));
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
@@ -106,6 +122,8 @@ public class FExtraction {
 
 			// Process through the resultset of query
 			while (rs.next()) {
+			   if (executed.contains(rs.getInt("id")))
+				  continue;
 			   PostEntity postEnt = new PostEntity(rs);
 			   Callable<ReadabilityEntity> callable = new ExtractionExecutor(
 					 postEnt);
@@ -115,6 +133,7 @@ public class FExtraction {
 
 			// Insert into db
 			int y = 0;
+			List<Integer> preparedIndex = new ArrayList<Integer>();
 			for (Future<ReadabilityEntity> readEnt : list) {
 			   preparedStatement.clearParameters();
 			   ReadabilityEntity entToDb = readEnt.get();
@@ -134,8 +153,10 @@ public class FExtraction {
 			   preparedStatement.setBoolean(14, entToDb.hasAnswer);
 			   preparedStatement.setBoolean(15, entToDb.hasCode);
 			   preparedStatement.addBatch();
+			   preparedIndex.add(entToDb.id);
 			}
 			preparedStatement.executeBatch();
+			executed.addAll(preparedIndex);
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
