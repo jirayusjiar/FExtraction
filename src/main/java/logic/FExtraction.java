@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -21,7 +22,7 @@ public class FExtraction {
    private static final int querySize = 1000000;
    private static final int numIteration = 27;
 
-   private static List<Integer> executed = new ArrayList<Integer>();
+   private static HashSet<Integer> executed = new HashSet<Integer>();
 
    private static Connection connectToDB() {
 
