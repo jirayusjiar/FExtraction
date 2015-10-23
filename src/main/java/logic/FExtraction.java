@@ -121,7 +121,7 @@ public class FExtraction {
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 
-			ExecutorService threadPool = Executors.newFixedThreadPool(128);
+			ExecutorService threadPool = Executors.newFixedThreadPool(2048);
 			List<Future<ReadabilityEntity>> list = new ArrayList<Future<ReadabilityEntity>>();
 
 			// Process through the resultset of query
