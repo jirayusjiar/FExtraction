@@ -29,8 +29,15 @@ public class ExtractionExecutor implements Callable {
 
 	  output = new ReadabilityEntity();
 	  output.id = inputData.id;
-	  this.body = inputData.body;
-	  this.tags = inputData.tags;
+	  if (inputData.body == null)
+		 this.body = "";
+	  else
+		 this.body = inputData.body;
+	  if (inputData.tags == null)
+		 this.tags = "";
+	  else
+		 this.tags = inputData.tags;
+
 	  output.hasAnswer = (inputData.acceptedAnswerId != 0);
    }
 
