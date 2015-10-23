@@ -96,8 +96,6 @@ public class FExtraction {
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
-		 dbConnection.setAutoCommit(false);
-
 		 if (rs != null) {
 
 			ExecutorService threadPool = Executors.newFixedThreadPool(64);
@@ -109,7 +107,6 @@ public class FExtraction {
 			   Callable<ReadabilityEntity> callable = new ExtractionExecutor(
 					 postEnt);
 			   list.add(threadPool.submit(callable));
-			   System.out.println("Pending id : " + postEnt.id);
 			}
 
 			// Insert into db
@@ -117,7 +114,6 @@ public class FExtraction {
 			for (Future<ReadabilityEntity> readEnt : list) {
 			   preparedStatement.clearParameters();
 			   ReadabilityEntity entToDb = readEnt.get();
-			   System.out.println("Preparing Statement for id : " + entToDb.id);
 			   preparedStatement.setInt(1, entToDb.id);
 			   preparedStatement.setInt(2, entToDb.contentLength);
 			   preparedStatement.setDouble(3, entToDb.ari);
@@ -136,7 +132,6 @@ public class FExtraction {
 			   preparedStatement.addBatch();
 			}
 			preparedStatement.executeBatch();
-			dbConnection.commit();
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
