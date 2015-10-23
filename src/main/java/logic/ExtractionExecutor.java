@@ -18,6 +18,9 @@ public class ExtractionExecutor implements Callable {
    private String tags;
    private ReadabilityEntity output;
 
+   public ExtractionExecutor() {
+   }
+
    public ExtractionExecutor(PostEntity inputData) {
 
 	  // Preprocessing clean text
@@ -90,18 +93,21 @@ public class ExtractionExecutor implements Callable {
 	  return output;
    }
 
-   private String getTextWithoutCode(Document inputHtmlDocument) {
+   protected String getTextWithoutCode(Document inputHtmlDocument) {
 	  return recursiveExtraction(inputHtmlDocument.head())
 			+ recursiveExtraction(inputHtmlDocument.body());
    }
 
-   private String recursiveExtraction(Element inputElement) {
+   protected String recursiveExtraction(Element inputElement) {
+	  if (inputElement == null)
+		 return "";
 	  StringBuilder output = new StringBuilder("");
 	  if (inputElement.tagName() == null)
 		 return "";
-	  else if (!inputElement.tagName().equals("code")
-			&& !inputElement.ownText().isEmpty()) {
-		 output = new StringBuilder(inputElement.ownText() + " ");
+	  else if (!inputElement.tagName().equals("code")) {
+		 // Note <code> section
+		 if (!inputElement.ownText().isEmpty())
+			output = new StringBuilder(inputElement.ownText() + " ");
 	  } else {
 		 // <code> section
 		 this.output.loc += inputElement.ownText().split("\n").length;

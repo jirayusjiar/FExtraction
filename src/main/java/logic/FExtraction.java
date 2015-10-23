@@ -133,7 +133,6 @@ public class FExtraction {
 			System.out.println("Finish preprocessing\nStart putting to DB");
 
 			// Insert into db
-			int y = 0;
 			List<Integer> preparedIndex = new ArrayList<Integer>();
 			for (Future<ReadabilityEntity> readEnt : list) {
 			   preparedStatement.clearParameters();
