@@ -79,7 +79,7 @@ public class FExtraction {
    public static void main(String[] args) {
 
 	  System.out.println("Start the execution...");
-	  for (int x = 0; x < 9; ++x) {
+	  for (int x = 1; x < 9; ++x) {
 		 System.out.println("Iteration " + x);
 		 execution(x);
 		 System.out.println("Done execution of iteration " + x);
@@ -99,7 +99,7 @@ public class FExtraction {
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 
-			ExecutorService threadPool = Executors.newFixedThreadPool(64);
+			ExecutorService threadPool = Executors.newFixedThreadPool(128);
 			List<Future<ReadabilityEntity>> list = new ArrayList<Future<ReadabilityEntity>>();
 
 			// Process through the resultset of query

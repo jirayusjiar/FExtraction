@@ -41,7 +41,7 @@ public class ExtractionExecutor implements Callable {
 	  output.hasAnswer = (inputData.acceptedAnswerId != 0);
    }
 
-   public ReadabilityEntity call() throws Exception {
+   public ReadabilityEntity call() {
 
 	  output.hasCode = this.body.contains("<code>");
 
@@ -51,25 +51,41 @@ public class ExtractionExecutor implements Callable {
 			++output.nTag;
 
 	  // Get rawText of post
-	  String rawText = getTextWithoutCode(Jsoup.parse(this.body)).trim();
+	  try {
+		 String rawText = getTextWithoutCode(Jsoup.parse(this.body)).trim();
 
-	  // Compute contentLength & readability scores
-	  Readability readabilitEntity = new Readability(rawText);
-	  output.sentenceCount = readabilitEntity.getSentences();
-	  output.contentLength = readabilitEntity.getCharacters();
-	  output.wordCount = readabilitEntity.getWords();
-	  if (output.wordCount == 0) {
+		 // Compute contentLength & readability scores
+		 Readability readabilitEntity = new Readability(rawText);
+		 output.sentenceCount = readabilitEntity.getSentences();
+		 output.contentLength = readabilitEntity.getCharacters();
+		 output.wordCount = readabilitEntity.getWords();
+		 if (output.wordCount == 0) {
+			output.colemanIndex = -20000.0;
+			output.fleschKincaid = -20000.0;
+			output.fleschReading = -20000.0;
+			output.gunningFox = -20000.0;
+			output.smog = -20000.0;
+			output.ari = -20000.0;
+		 } else {
+			output.colemanIndex = readabilitEntity.getColemanLiau();
+			output.fleschKincaid = readabilitEntity
+				  .getFleschKincaidGradeLevel();
+			output.fleschReading = readabilitEntity.getFleschReadingEase();
+			output.gunningFox = readabilitEntity.getGunningFog();
+			output.smog = readabilitEntity.getSMOG();
+			output.ari = readabilitEntity.getARI();
+		 }
+	  } catch (Exception e) {
+		 System.out.println("Failed to execute \nBody : "
+			   + (this.body == null ? "null" : this.body));
+		 e.printStackTrace();
+
 		 output.colemanIndex = -20000.0;
 		 output.fleschKincaid = -20000.0;
 		 output.fleschReading = -20000.0;
 		 output.gunningFox = -20000.0;
 		 output.smog = -20000.0;
-	  } else {
-		 output.colemanIndex = readabilitEntity.getColemanLiau();
-		 output.fleschKincaid = readabilitEntity.getFleschKincaidGradeLevel();
-		 output.fleschReading = readabilitEntity.getFleschReadingEase();
-		 output.gunningFox = readabilitEntity.getGunningFog();
-		 output.smog = readabilitEntity.getSMOG();
+		 output.ari = -20000.0;
 	  }
 	  return output;
    }
@@ -81,7 +97,9 @@ public class ExtractionExecutor implements Callable {
 
    private String recursiveExtraction(Element inputElement) {
 	  StringBuilder output = new StringBuilder("");
-	  if (!inputElement.tagName().equals("code")
+	  if (inputElement.tagName() == null)
+		 return "";
+	  else if (!inputElement.tagName().equals("code")
 			&& !inputElement.ownText().isEmpty()) {
 		 output = new StringBuilder(inputElement.ownText() + " ");
 	  } else {
