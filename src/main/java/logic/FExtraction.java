@@ -82,7 +82,8 @@ public class FExtraction {
 	  System.out.println("Getting executed id");
 	  getExecuted();
 	  System.out.println("Start the execution...");
-	  execution();
+	  for (int i = 0; i < 4; ++i)
+		 execution(i);
 
    }
 
@@ -101,10 +102,14 @@ public class FExtraction {
 	  }
    }
 
-   // Divide dataset into 1 million questions in each execution
-   private static void execution() {
+   // Divide dataset into 7 million questions in each execution
+   private static void execution(int index) {
+	  System.out.println("Execution from id >=" + (index * 7000000)
+			+ " and id < " + ((index + 1) * 7000000));
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection, "select * from question");
+			ResultSet rs = executeQuery(dbConnection,
+				  "select * from question where id >=" + (index * 7000000)
+						+ " and id < " + ((index + 1) * 7000000));
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
