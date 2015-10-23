@@ -4,6 +4,7 @@ import ipeirotis.readability.Readability;
 
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -18,6 +19,14 @@ public class ExtractionExecutor implements Callable {
    private ReadabilityEntity output;
 
    public ExtractionExecutor(PostEntity inputData) {
+
+	  // Preprocessing clean text
+	  inputData.body = cleanText(inputData.body);
+	  inputData.ownerDisplayName = cleanText(inputData.ownerDisplayName);
+	  inputData.lastEditorUserName = cleanText(inputData.lastEditorUserName);
+	  inputData.title = cleanText(inputData.title);
+	  inputData.tags = cleanText(inputData.tags);
+
 	  output = new ReadabilityEntity();
 	  output.id = inputData.id;
 	  this.body = inputData.body;
@@ -39,15 +48,22 @@ public class ExtractionExecutor implements Callable {
 
 	  // Compute contentLength & readability scores
 	  Readability readabilitEntity = new Readability(rawText);
-	  output.contentLength = readabilitEntity.getCharacters();
-	  output.colemanIndex = readabilitEntity.getColemanLiau();
-	  output.fleschKincaid = readabilitEntity.getFleschKincaidGradeLevel();
-	  output.fleschReading = readabilitEntity.getFleschReadingEase();
-	  output.gunningFox = readabilitEntity.getGunningFog();
-	  output.smog = readabilitEntity.getSMOG();
 	  output.sentenceCount = readabilitEntity.getSentences();
+	  output.contentLength = readabilitEntity.getCharacters();
 	  output.wordCount = readabilitEntity.getWords();
-
+	  if (output.wordCount == 0) {
+		 output.colemanIndex = -20000.0;
+		 output.fleschKincaid = -20000.0;
+		 output.fleschReading = -20000.0;
+		 output.gunningFox = -20000.0;
+		 output.smog = -20000.0;
+	  } else {
+		 output.colemanIndex = readabilitEntity.getColemanLiau();
+		 output.fleschKincaid = readabilitEntity.getFleschKincaidGradeLevel();
+		 output.fleschReading = readabilitEntity.getFleschReadingEase();
+		 output.gunningFox = readabilitEntity.getGunningFog();
+		 output.smog = readabilitEntity.getSMOG();
+	  }
 	  return output;
    }
 
@@ -70,4 +86,13 @@ public class ExtractionExecutor implements Callable {
 		 output.append(recursiveExtraction(child) + " ");
 	  return output.toString();
    }
+
+   private String cleanText(String inputString) {
+	  if (inputString == null || inputString.isEmpty())
+		 return inputString;
+	  String htmlText = StringEscapeUtils.unescapeHtml4(inputString);
+	  return htmlText.trim();
+
+   }
+
 }

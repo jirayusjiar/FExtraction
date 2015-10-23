@@ -96,6 +96,7 @@ public class FExtraction {
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
+		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 
 			ExecutorService threadPool = Executors.newFixedThreadPool(64);
@@ -108,6 +109,7 @@ public class FExtraction {
 					 postEnt);
 			   list.add(threadPool.submit(callable));
 			}
+			System.out.println("Finish preprocessing\nStart putting to DB");
 
 			// Insert into db
 			int y = 0;
