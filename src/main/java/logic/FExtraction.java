@@ -18,8 +18,8 @@ import entity.ReadabilityEntity;
 
 public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
-   private static final int querySize = 3000000;
-   private static final int numIteration = 9;
+   private static final int querySize = 1000000;
+   private static final int numIteration = 27;
 
    private static List<Integer> executed = new ArrayList<Integer>();
 
@@ -106,7 +106,7 @@ public class FExtraction {
 	  }
    }
 
-   // Divide dataset into 7 million questions in each execution
+   // Divide dataset into small size
    private static void execution(int index, int querySize) {
 
 	  System.out.println("Execution from id >=" + (index * querySize)
