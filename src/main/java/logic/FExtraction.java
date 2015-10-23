@@ -17,6 +17,9 @@ import entity.PostEntity;
 import entity.ReadabilityEntity;
 
 public class FExtraction {
+   // Last index around 26 million == querySize*numIteration>26000000
+   private static final int querySize = 3000000;
+   private static final int numIteration = 9;
 
    private static List<Integer> executed = new ArrayList<Integer>();
 
@@ -82,8 +85,9 @@ public class FExtraction {
 	  System.out.println("Getting executed id");
 	  getExecuted();
 	  System.out.println("Start the execution...");
-	  for (int i = 0; i < 4; ++i)
-		 execution(i);
+
+	  for (int i = 0; i < numIteration; ++i)
+		 execution(i, querySize);
 
    }
 
@@ -103,13 +107,14 @@ public class FExtraction {
    }
 
    // Divide dataset into 7 million questions in each execution
-   private static void execution(int index) {
-	  System.out.println("Execution from id >=" + (index * 7000000)
-			+ " and id < " + ((index + 1) * 7000000));
+   private static void execution(int index, int querySize) {
+
+	  System.out.println("Execution from id >=" + (index * querySize)
+			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select * from question where id >=" + (index * 7000000)
-						+ " and id < " + ((index + 1) * 7000000));
+				  "select * from question where id >=" + (index * querySize)
+						+ " and id < " + ((index + 1) * querySize));
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
