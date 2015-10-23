@@ -79,7 +79,8 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
-
+	  System.out.println("Getting executed id");
+	  getExecuted();
 	  System.out.println("Start the execution...");
 
 	  for (int x = 0; x < 9; ++x) {
