@@ -78,8 +78,21 @@ public class FExtraction {
 
    public static void main(String[] args) {
 
+	  System.out.println("Start the execution...");
+	  for (int x = 0; x < 9; ++x) {
+		 System.out.println("Iteration " + x);
+		 execution(x);
+		 System.out.println("Done execution of iteration " + x);
+	  }
+
+   }
+
+   // Divide dataset into 1 million questions in each execution
+   private static void execution(int index) {
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection, "select * from question");
+			ResultSet rs = executeQuery(dbConnection,
+				  "select * from question limit 1000000 offset "
+						+ (index * 1000000));
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
