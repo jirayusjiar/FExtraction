@@ -114,8 +114,8 @@ public class FExtraction {
 			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select * from question limit " + querySize + " offset "
-						+ (index * querySize));
+				  "select * from question where id >=" + (index * querySize)
+						+ " and id < " + ((index + 1) * querySize));
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
 
