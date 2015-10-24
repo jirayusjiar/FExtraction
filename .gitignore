@@ -1,2 +1,5 @@
 /target/
 *.sh
+*.log
+/resource/questionFeatures.csv
+/resource/questionFeatures_WithHeader.csv
