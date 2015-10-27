@@ -22,7 +22,7 @@ def execute(numQuery,numIteration):
 
     updateContent = []
     for row in cursor:
-        tokenizedText = '\n'.join(sent_detector.tokenize(row[1].replace("\n"," ").strip()))
+        tokenizedText = ('\n'.join(sent_detector.tokenize(row[1].decode("utf8").replace("\n"," ").strip())))
         updateContent.append({'id': row[0], 'tokenized': tokenizedText})
     cursor.close()
     conn.close()
