@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -20,6 +21,8 @@ public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
    private static final int querySize = 1000000;
    private static final int numIteration = 27;
+
+   private static HashSet<Integer> targetId = new HashSet<Integer>();
 
    private static Connection connectToDB() {
 
@@ -80,11 +83,27 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
+	  System.out.println("Get targetId...");
+	  getTargetId();
 	  System.out.println("Start the execution...");
-
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
 
+   }
+
+   public static void getTargetId() {
+	  try (Connection dbConnection = connectToDB();
+			ResultSet rs = executeQuery(dbConnection,
+				  "select id from question_features");) {
+		 System.out.println("Finish fetching query\nStart adding executed id");
+		 if (rs != null) {
+			while (rs.next()) {
+			   targetId.add(rs.getInt("id"));
+			}
+		 }
+	  } catch (Exception e) {
+		 e.printStackTrace();
+	  }
    }
 
    // Divide dataset into small size
@@ -108,6 +127,8 @@ public class FExtraction {
 
 			// Process through the resultset of query
 			while (rs.next()) {
+			   if (!targetId.contains(rs.getInt(1)))
+				  continue;
 			   PostEntity postEnt = new PostEntity(rs);
 			   Callable<ParsedTextEntity> callable = new ExtractionExecutor(
 					 postEnt);
