@@ -30,7 +30,7 @@ public class ExtractionExecutor implements Callable {
 
    protected String getTextWithoutCode(Document inputHtmlDocument) {
 	  return (recursiveExtraction(inputHtmlDocument.head()) + recursiveExtraction(inputHtmlDocument
-			.body())).replace("\n", " ").trim();
+			.body())).replace("\n", " ").trim().replace("0x00", "");
    }
 
    protected String recursiveExtraction(Element inputElement) {
