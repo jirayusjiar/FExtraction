@@ -3,7 +3,8 @@ __author__ = 'jirayus-j'
 import sys
 import psycopg2
 import nltk.data
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 def execute(numQuery,numIteration):
     # get a connection, if a connect cannot be made an exception will be raised here
