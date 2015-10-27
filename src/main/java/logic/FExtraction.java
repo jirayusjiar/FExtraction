@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -14,15 +13,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import entity.ParsedTextEntity;
 import entity.PostEntity;
-import entity.ReadabilityEntity;
 
 public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
    private static final int querySize = 1000000;
    private static final int numIteration = 27;
-
-   private static HashSet<Integer> executed = new HashSet<Integer>();
 
    private static Connection connectToDB() {
 
@@ -83,28 +80,11 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
-	  System.out.println("Getting executed id");
-	  getExecuted();
 	  System.out.println("Start the execution...");
 
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
 
-   }
-
-   public static void getExecuted() {
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features");) {
-		 System.out.println("Finish fetching query\nStart adding executed id");
-		 if (rs != null) {
-			while (rs.next()) {
-			   executed.add(rs.getInt("id"));
-			}
-		 }
-	  } catch (Exception e) {
-		 e.printStackTrace();
-	  }
    }
 
    // Divide dataset into small size
@@ -114,23 +94,22 @@ public class FExtraction {
 			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select * from question where id >=" + (index * querySize)
-						+ " and id < " + ((index + 1) * querySize));
+				  "select id,body from question where id >="
+						+ (index * querySize) + " and id < "
+						+ ((index + 1) * querySize));
 			PreparedStatement preparedStatement = dbConnection
-				  .prepareStatement("INSERT INTO question_features values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
+				  .prepareStatement("INSERT INTO question_preprocess (id,\"parsedText\") values (?,?)")) {
 
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 
 			ExecutorService threadPool = Executors.newFixedThreadPool(136);
-			List<Future<ReadabilityEntity>> list = new ArrayList<Future<ReadabilityEntity>>();
+			List<Future<ParsedTextEntity>> list = new ArrayList<Future<ParsedTextEntity>>();
 
 			// Process through the resultset of query
 			while (rs.next()) {
-			   if (executed.contains(rs.getInt("id")))
-				  continue;
 			   PostEntity postEnt = new PostEntity(rs);
-			   Callable<ReadabilityEntity> callable = new ExtractionExecutor(
+			   Callable<ParsedTextEntity> callable = new ExtractionExecutor(
 					 postEnt);
 			   list.add(threadPool.submit(callable));
 			}
@@ -139,30 +118,14 @@ public class FExtraction {
 			if (!list.isEmpty()) {
 
 			   // Insert into db
-			   List<Integer> preparedIndex = new ArrayList<Integer>();
-			   for (Future<ReadabilityEntity> readEnt : list) {
+			   for (Future<ParsedTextEntity> readEnt : list) {
 				  preparedStatement.clearParameters();
-				  ReadabilityEntity entToDb = readEnt.get();
+				  ParsedTextEntity entToDb = readEnt.get();
 				  preparedStatement.setInt(1, entToDb.id);
-				  preparedStatement.setInt(2, entToDb.contentLength);
-				  preparedStatement.setDouble(3, entToDb.ari);
-				  preparedStatement.setDouble(4, entToDb.colemanIndex);
-				  preparedStatement.setDouble(5, entToDb.fleschKincaid);
-				  preparedStatement.setDouble(6, entToDb.fleschReading);
-				  preparedStatement.setDouble(7, entToDb.gunningFox);
-				  preparedStatement.setDouble(8, entToDb.smog);
-				  preparedStatement.setInt(9, entToDb.sentenceCount);
-				  preparedStatement.setInt(10, entToDb.wordCount);
-				  preparedStatement.setInt(11, entToDb.nTag);
-				  preparedStatement.setDouble(12, 0.0);
-				  preparedStatement.setInt(13, entToDb.loc);
-				  preparedStatement.setBoolean(14, entToDb.hasAnswer);
-				  preparedStatement.setBoolean(15, entToDb.hasCode);
+				  preparedStatement.setString(2, entToDb.parseText);
 				  preparedStatement.addBatch();
-				  preparedIndex.add(entToDb.id);
 			   }
 			   preparedStatement.executeBatch();
-			   executed.addAll(preparedIndex);
 			}
 		 }
 	  } catch (SQLException e) {
