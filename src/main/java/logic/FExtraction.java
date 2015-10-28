@@ -22,11 +22,13 @@ public class FExtraction {
    // private static final int numThread = 5;
 
    // Real
-   private static final int querySize = 1000;
-   private static final int numIteration = 26000;
+   private static final int querySize = 100000;
+   private static final int numIteration = 260;
    private static final int numThread = 8;
 
    private static StanfordCoreNLP[] pipeline;
+   private static Queue<Integer>[] idQueue;
+   private static Queue<String>[] bodyQueue;
 
    private static Connection connectToDB() {
 
@@ -87,7 +89,19 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
-	  System.out.println("Get targetId...");
+	  System.out.println("Start preparing the environment");
+	  Properties props = new Properties();
+	  props.setProperty("annotators",
+			"tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+	  pipeline = new StanfordCoreNLP[numThread];
+	  idQueue = new Queue[numThread];
+	  bodyQueue = new Queue[numThread];
+	  for (int i = 0; i < numThread; ++i) {
+		 idQueue[i] = new ArrayDeque<Integer>();
+		 bodyQueue[i] = new ArrayDeque<String>();
+		 pipeline[i] = new StanfordCoreNLP(props);
+	  }
+
 	  System.out.println("Start the execution...");
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
@@ -111,20 +125,6 @@ public class FExtraction {
 			// Init threadPool
 			ExecutorService threadPool = Executors
 				  .newFixedThreadPool(numThread);
-
-			// Pending queues to executors in thread pool
-
-			Properties props = new Properties();
-			props.setProperty("annotators",
-				  "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-			pipeline = new StanfordCoreNLP[numThread];
-			Queue<Integer>[] idQueue = new Queue[numThread];
-			Queue<String>[] bodyQueue = new Queue[numThread];
-			for (int i = 0; i < numThread; ++i) {
-			   idQueue[i] = new ArrayDeque<Integer>();
-			   bodyQueue[i] = new ArrayDeque<String>();
-			   pipeline[i] = new StanfordCoreNLP(props);
-			}
 
 			// Submitting the query to executor thread
 			int runner = 0;
