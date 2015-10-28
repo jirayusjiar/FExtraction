@@ -43,6 +43,8 @@ public class ExtractionExecutor implements Runnable {
    @Override
    public void run() {
 	  // parse dependency
+	  System.out.println("Iteration " + numIteration + " Thread "
+			+ threadNumber + " : n(Queue) = " + idQueue.size());
 
 	  int localId;
 	  String localBody;
