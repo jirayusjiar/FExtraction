@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -112,8 +113,6 @@ public class FExtraction {
 			for (int i = 0; i < numThread; ++i) {
 			   idQueue[i] = new ArrayDeque<Integer>();
 			   bodyQueue[i] = new ArrayDeque<String>();
-			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-					 idQueue[i], bodyQueue[i]));
 			}
 
 			// Submitting the query to executor thread
@@ -126,12 +125,17 @@ public class FExtraction {
 				  runner = 0;
 			}
 			System.out.println("Iteration " + (index + 1)
-				  + " Finish submitting all the query");
+				  + " Finish preparing all the query");
+			for (int i = 0; i < numThread; ++i) {
+			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
+					 idQueue[i], bodyQueue[i]));
+			}
+			System.out.println("Iteration " + (index + 1)
+				  + " Finish submit to executors");
 
-			// Break the execution loop of executor
-			for (int i = 0; i < numThread; ++i)
-			   idQueue[i].add(-1);
 			threadPool.shutdown();
+			while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
+			}
 			System.out.println("Iteration " + (index + 1)
 				  + " Finish preprocessing\n");
 
@@ -139,6 +143,8 @@ public class FExtraction {
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 		 e.getNextException().printStackTrace();
+	  } catch (InterruptedException e) {
+		 e.printStackTrace();
 	  }
 	  System.out.println("Iteration " + (index + 1)
 			+ " Iteration execution DONE :D");

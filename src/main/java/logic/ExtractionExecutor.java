@@ -50,13 +50,8 @@ public class ExtractionExecutor implements Runnable {
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("UPDATE question_preprocess SET \"dependencyParsed\" = ? WHERE id = ?");) {
 
-		 boolean continueRunning = true;
-		 while (continueRunning) {
+		 while (true) {
 			if (!this.idQueue.isEmpty()) {
-			   if (this.idQueue.peek() == -1) {
-				  continueRunning = false;
-				  continue;
-			   }
 
 			   // Instance is appended from main thread
 			   localId = this.idQueue.remove();
@@ -73,7 +68,8 @@ public class ExtractionExecutor implements Runnable {
 			   preparedStatement.setString(1, localBody);
 			   preparedStatement.setInt(2, localId);
 			   preparedStatement.addBatch();
-			}
+			} else
+			   break;
 		 }
 
 		 // Exit from the loop -> Execute update batch
