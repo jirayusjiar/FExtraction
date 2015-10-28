@@ -2,27 +2,25 @@ package logic;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import entity.ParsedTextEntity;
-import entity.PostEntity;
 
 public class FExtraction {
-   // Last index around 26 million == querySize*numIteration>26000000
+   // Last index is around 26 million == querySize*numIteration>26000000
+
+   // Test
+   // private static final int querySize = 10;
+   // private static final int numIteration = 2;
+   // private static final int numThread = 5;
+
+   // Real
    private static final int querySize = 1000000;
    private static final int numIteration = 27;
-
-   private static HashSet<Integer> targetId = new HashSet<Integer>();
+   private static final int numThread = 64;
 
    private static Connection connectToDB() {
 
@@ -84,79 +82,65 @@ public class FExtraction {
 
    public static void main(String[] args) {
 	  System.out.println("Get targetId...");
-	  getTargetId();
 	  System.out.println("Start the execution...");
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
 
    }
 
-   public static void getTargetId() {
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features");) {
-		 System.out.println("Finish fetching query\nStart adding executed id");
-		 if (rs != null) {
-			while (rs.next()) {
-			   targetId.add(rs.getInt("id"));
-			}
-		 }
-	  } catch (Exception e) {
-		 e.printStackTrace();
-	  }
-   }
-
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
 
-	  System.out.println("Execution from id >=" + (index * querySize)
-			+ " and id < " + ((index + 1) * querySize));
+	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
+			+ (index * querySize) + " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select id,body from question where id >="
+				  "select id,\"tokenizedSentence\" from question_preprocess where id >="
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));
-			PreparedStatement preparedStatement = dbConnection
-				  .prepareStatement("INSERT INTO question_preprocess (id,\"parsedText\") values (?,?)")) {
-
-		 System.out.println("Finish fetching query\nStart processing");
+						+ ((index + 1) * querySize));) {
+		 System.out.println("Iteration " + (index + 1)
+			   + " Finish fetching query\nStart processing");
 		 if (rs != null) {
 
-			ExecutorService threadPool = Executors.newFixedThreadPool(136);
-			List<Future<ParsedTextEntity>> list = new ArrayList<Future<ParsedTextEntity>>();
+			// Init threadPool
+			ExecutorService threadPool = Executors
+				  .newFixedThreadPool(numThread);
 
-			// Process through the resultset of query
+			// Pending queues to executors in thread pool
+			Queue<Integer>[] idQueue = new Queue[numThread];
+			Queue<String>[] bodyQueue = new Queue[numThread];
+			for (int i = 0; i < numThread; ++i) {
+			   idQueue[i] = new ArrayDeque<Integer>();
+			   bodyQueue[i] = new ArrayDeque<String>();
+			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
+					 idQueue[i], bodyQueue[i]));
+			}
+
+			// Submitting the query to executor thread
+			int runner = 0;
 			while (rs.next()) {
-			   if (!targetId.contains(rs.getInt(1)))
-				  continue;
-			   PostEntity postEnt = new PostEntity(rs);
-			   Callable<ParsedTextEntity> callable = new ExtractionExecutor(
-					 postEnt);
-			   list.add(threadPool.submit(callable));
+			   idQueue[runner].add(rs.getInt("id"));
+			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));
+			   ++runner;
+			   if (runner == numThread)
+				  runner = 0;
 			}
-			System.out.println("Finish preprocessing\nStart putting to DB");
+			System.out.println("Iteration " + (index + 1)
+				  + " Finish submitting all the query");
 
-			if (!list.isEmpty()) {
+			// Break the execution loop of executor
+			for (int i = 0; i < numThread; ++i)
+			   idQueue[i].add(-1);
+			threadPool.shutdown();
+			System.out.println("Iteration " + (index + 1)
+				  + " Finish preprocessing\n");
 
-			   // Insert into db
-			   for (Future<ParsedTextEntity> readEnt : list) {
-				  preparedStatement.clearParameters();
-				  ParsedTextEntity entToDb = readEnt.get();
-				  preparedStatement.setInt(1, entToDb.id);
-				  preparedStatement.setString(2, entToDb.parseText);
-				  preparedStatement.addBatch();
-			   }
-			   preparedStatement.executeBatch();
-			}
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 		 e.getNextException().printStackTrace();
-	  } catch (InterruptedException e) {
-		 e.printStackTrace();
-	  } catch (ExecutionException e) {
-		 e.printStackTrace();
 	  }
-	  System.out.println("Done :D");
+	  System.out.println("Iteration " + (index + 1)
+			+ " Iteration execution DONE :D");
    }
 }
