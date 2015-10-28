@@ -21,7 +21,7 @@ public class FExtraction {
    // Real
    private static final int querySize = 100000;
    private static final int numIteration = 260;
-   private static final int numThread = 32;
+   private static final int numThread = 8;
 
    private static Connection connectToDB() {
 
