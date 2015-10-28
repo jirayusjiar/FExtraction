@@ -20,70 +20,69 @@ package ipeirotis.readability;
  */
 public class Syllabify {
 
-    static String[] SubSyl = { "cial", "tia", "cius", "cious", "giu", "ion",
-		"iou", "sia$", ".ely$" };
-    static String[] AddSyl = { "ia", "riet", "dien", "iu", "io", "ii",
-		"[aeiouym]bl$", "[aeiou]{3}", "^mc", "ism$",
-		"[^aeiouy][^aeiouy]l$", "[^l]lien", "^coa[dglx].",
-		"[^gq]ua[^auieo]", "dnt$" };
+   static String[] SubSyl = { "cial", "tia", "cius", "cious", "giu", "ion",
+		 "iou", "sia$", ".ely$" };
+   static String[] AddSyl = { "ia", "riet", "dien", "iu", "io", "ii",
+		 "[aeiouym]bl$", "[aeiou]{3}", "^mc", "ism$", "[^aeiouy][^aeiouy]l$",
+		 "[^l]lien", "^coa[dglx].", "[^gq]ua[^auieo]", "dnt$" };
 
-    public static int syllable(String word) {
+   public static int syllable(String word) {
 
 	  word = word.toLowerCase();
 	  word = word.replaceAll("'", " ");
 
 	  if (word.equals("i"))
-		return 1;
+		 return 1;
 	  if (word.equals("a"))
-		return 1;
+		 return 1;
 
 	  if (word.endsWith("e")) {
-		word = word.substring(0, word.length() - 1);
+		 word = word.substring(0, word.length() - 1);
 	  }
 
 	  String[] phonems = word.split("[^aeiouy]+");
 
 	  int syl = 0;
 	  for (int i = 0; i < SubSyl.length; i++) {
-		String syllabe = SubSyl[i];
-		if (word.matches(syllabe)) {
-		    syl--;
-		}
+		 String syllabe = SubSyl[i];
+		 if (word.matches(syllabe)) {
+			syl--;
+		 }
 	  }
 	  for (int i = 0; i < AddSyl.length; i++) {
-		String syllabe = AddSyl[i];
-		if (word.matches(syllabe)) {
-		    syl++;
-		}
+		 String syllabe = AddSyl[i];
+		 if (word.matches(syllabe)) {
+			syl++;
+		 }
 	  }
 	  if (word.length() == 1) {
-		syl++;
+		 syl++;
 	  }
 
 	  for (int i = 0; i < phonems.length; i++) {
-		if (phonems[i].length() > 0)
-		    syl++;
+		 if (phonems[i].length() > 0)
+			syl++;
 	  }
 
 	  if (syl == 0) {
-		syl = 1;
+		 syl = 1;
 	  }
 
 	  return syl;
-    }
+   }
 
-    public static void main(String[] args) {
+   public static void main(String[] args) {
 	  try {
 
-		String w = args[0];
-		int s = syllable(w);
-		System.out.println("---");
-		System.out.println(w);
-		System.out.println(s);
+		 String w = args[0];
+		 int s = syllable(w);
+		 System.out.println("---");
+		 System.out.println(w);
+		 System.out.println(s);
 
 	  } catch (Exception e) {
-		e.printStackTrace();
+		 e.printStackTrace();
 	  }
-    }
+   }
 
 }

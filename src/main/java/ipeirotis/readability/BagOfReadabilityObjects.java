@@ -1,116 +1,116 @@
 package ipeirotis.readability;
 
 public class BagOfReadabilityObjects {
-    private Integer characters;
-    private Integer words;
-    private Integer sentences;
-    private Integer syllables;
-    private Integer complexwords;
-    private Double ari;
-    private Double colemanliau;
-    private Double fleschkincaid;
-    private Double fleschreading;
-    private Double gunningfog;
-    private Double smog;
-    private Double smogindex;
+   private Integer characters;
+   private Integer words;
+   private Integer sentences;
+   private Integer syllables;
+   private Integer complexwords;
+   private Double ari;
+   private Double colemanliau;
+   private Double fleschkincaid;
+   private Double fleschreading;
+   private Double gunningfog;
+   private Double smog;
+   private Double smogindex;
 
-    BagOfReadabilityObjects() {
+   BagOfReadabilityObjects() {
 	  // no-args constructor
-    }
+   }
 
-    public Integer getCharacters() {
+   public Integer getCharacters() {
 	  return characters;
-    }
+   }
 
-    public void setCharacters(Integer characters) {
+   public void setCharacters(Integer characters) {
 	  this.characters = characters;
-    }
+   }
 
-    public Integer getWords() {
+   public Integer getWords() {
 	  return words;
-    }
+   }
 
-    public void setWords(Integer words) {
+   public void setWords(Integer words) {
 	  this.words = words;
-    }
+   }
 
-    public Integer getSentences() {
+   public Integer getSentences() {
 	  return sentences;
-    }
+   }
 
-    public void setSentences(Integer sentences) {
+   public void setSentences(Integer sentences) {
 	  this.sentences = sentences;
-    }
+   }
 
-    public Integer getSyllables() {
+   public Integer getSyllables() {
 	  return syllables;
-    }
+   }
 
-    public void setSyllables(Integer syllables) {
+   public void setSyllables(Integer syllables) {
 	  this.syllables = syllables;
-    }
+   }
 
-    public Integer getComplexwords() {
+   public Integer getComplexwords() {
 	  return complexwords;
-    }
+   }
 
-    public void setComplexwords(Integer complexwords) {
+   public void setComplexwords(Integer complexwords) {
 	  this.complexwords = complexwords;
-    }
+   }
 
-    public Double getARI() {
+   public Double getARI() {
 	  return this.ari;
-    }
+   }
 
-    public void setARI(Double ari) {
+   public void setARI(Double ari) {
 	  this.ari = ari;
-    }
+   }
 
-    public Double getColemanLiau() {
+   public Double getColemanLiau() {
 	  return colemanliau;
-    }
+   }
 
-    public void setColemanLiau(Double colemanLiau) {
+   public void setColemanLiau(Double colemanLiau) {
 	  this.colemanliau = colemanLiau;
-    }
+   }
 
-    public Double getFleschKincaid() {
+   public Double getFleschKincaid() {
 	  return fleschkincaid;
-    }
+   }
 
-    public void setFleschKincaid(Double fleschKincaid) {
+   public void setFleschKincaid(Double fleschKincaid) {
 	  this.fleschkincaid = fleschKincaid;
-    }
+   }
 
-    public Double getFleschReading() {
+   public Double getFleschReading() {
 	  return fleschreading;
-    }
+   }
 
-    public void setFleschReading(Double fleschReading) {
+   public void setFleschReading(Double fleschReading) {
 	  fleschreading = fleschReading;
-    }
+   }
 
-    public Double getGunningFog() {
+   public Double getGunningFog() {
 	  return gunningfog;
-    }
+   }
 
-    public void setGunningFog(Double gunningFog) {
+   public void setGunningFog(Double gunningFog) {
 	  this.gunningfog = gunningFog;
-    }
+   }
 
-    public Double getSMOG() {
+   public Double getSMOG() {
 	  return smog;
-    }
+   }
 
-    public void setSMOG(Double smog) {
+   public void setSMOG(Double smog) {
 	  this.smog = smog;
-    }
+   }
 
-    public Double getSMOGIndex() {
+   public Double getSMOGIndex() {
 	  return smogindex;
-    }
+   }
 
-    public void setSMOGIndex(Double smogindex) {
+   public void setSMOGIndex(Double smogindex) {
 	  this.smogindex = smogindex;
-    }
+   }
 }

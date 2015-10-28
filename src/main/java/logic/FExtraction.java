@@ -2,12 +2,19 @@ package logic;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
+import java.util.Properties;
+
+import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.IndexedWord;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.trees.semgraph.SemanticGraph;
+import edu.stanford.nlp.trees.semgraph.SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation;
+import edu.stanford.nlp.util.CoreMap;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -20,7 +27,8 @@ public class FExtraction {
    // Real
    private static final int querySize = 1000000;
    private static final int numIteration = 27;
-   private static final int numThread = 64;
+
+   private static StanfordCoreNLP pipeline;
 
    private static Connection connectToDB() {
 
@@ -81,7 +89,10 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
-	  System.out.println("Get targetId...");
+	  Properties props = new Properties();
+	  props.setProperty("annotators",
+			"tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+	  pipeline = new StanfordCoreNLP(props);
 	  System.out.println("Start the execution...");
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
@@ -97,41 +108,32 @@ public class FExtraction {
 			ResultSet rs = executeQuery(dbConnection,
 				  "select id,\"tokenizedSentence\" from question_preprocess where id >="
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));) {
+						+ ((index + 1) * querySize));
+			PreparedStatement preparedStatement = dbConnection
+				  .prepareStatement("UPDATE question_preprocess SET \"dependencyParsed\" = ? WHERE id = ?");) {
+
 		 System.out.println("Iteration " + (index + 1)
 			   + " Finish fetching query\nStart processing");
 		 if (rs != null) {
 
-			// Init threadPool
-			ExecutorService threadPool = Executors
-				  .newFixedThreadPool(numThread);
-
-			// Pending queues to executors in thread pool
-			Queue<Integer>[] idQueue = new Queue[numThread];
-			Queue<String>[] bodyQueue = new Queue[numThread];
-			for (int i = 0; i < numThread; ++i) {
-			   idQueue[i] = new ArrayDeque<Integer>();
-			   bodyQueue[i] = new ArrayDeque<String>();
-			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-					 idQueue[i], bodyQueue[i]));
-			}
-
-			// Submitting the query to executor thread
-			int runner = 0;
 			while (rs.next()) {
-			   idQueue[runner].add(rs.getInt("id"));
-			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));
-			   ++runner;
-			   if (runner == numThread)
-				  runner = 0;
+			   String[] sentences = rs.getString("tokenizedSentence").split(
+					 "\n");
+			   StringBuilder tmpBuilder = new StringBuilder();
+			   for (int i = 0; i < sentences.length; ++i) {
+				  tmpBuilder.append(dependencyParse(sentences[i]));
+				  if (i + 1 != sentences.length)
+					 tmpBuilder.append("\n");
+			   }
+			   preparedStatement.setString(1, tmpBuilder.toString());
+			   preparedStatement.setInt(2, rs.getInt("id"));
+			   preparedStatement.addBatch();
 			}
+			preparedStatement.executeBatch();
+
 			System.out.println("Iteration " + (index + 1)
 				  + " Finish submitting all the query");
 
-			// Break the execution loop of executor
-			for (int i = 0; i < numThread; ++i)
-			   idQueue[i].add(-1);
-			threadPool.shutdown();
 			System.out.println("Iteration " + (index + 1)
 				  + " Finish preprocessing\n");
 
@@ -142,5 +144,39 @@ public class FExtraction {
 	  }
 	  System.out.println("Iteration " + (index + 1)
 			+ " Iteration execution DONE :D");
+   }
+
+   private static String dependencyParse(String inputText) {
+
+	  StringBuilder output = new StringBuilder();
+
+	  // creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER,
+	  // parsing, and coreference resolution
+
+	  // create an empty Annotation just with the given text
+	  Annotation document = new Annotation(inputText);
+
+	  // run all Annotators on this text
+	  pipeline.annotate(document);
+
+	  // these are all the sentences in this document
+	  // a CoreMap is essentially a Map that uses class objects as keys and has
+	  // values with custom types
+	  List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+
+	  for (CoreMap sentence : sentences) {
+
+		 // this is the Stanford dependency graph of the current sentence
+		 SemanticGraph dependencies = sentence
+			   .get(CollapsedCCProcessedDependenciesAnnotation.class);
+
+		 if (!dependencies.getRoots().isEmpty()) {
+			IndexedWord root = dependencies.getFirstRoot();
+			output.append(String.format("root(ROOT-0, %s-%d)%n", root.word(),
+				  root.index()));
+		 }
+		 output.append(dependencies.toList());
+	  }
+	  return output.toString().replace("\n", "|");
    }
 }
