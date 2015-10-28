@@ -5,10 +5,13 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -19,9 +22,11 @@ public class FExtraction {
    // private static final int numThread = 5;
 
    // Real
-   private static final int querySize = 10000;
-   private static final int numIteration = 2600;
-   private static final int numThread = 4;
+   private static final int querySize = 1000;
+   private static final int numIteration = 26000;
+   private static final int numThread = 8;
+
+   private static StanfordCoreNLP[] pipeline;
 
    private static Connection connectToDB() {
 
@@ -108,11 +113,17 @@ public class FExtraction {
 				  .newFixedThreadPool(numThread);
 
 			// Pending queues to executors in thread pool
+
+			Properties props = new Properties();
+			props.setProperty("annotators",
+				  "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+			pipeline = new StanfordCoreNLP[numThread];
 			Queue<Integer>[] idQueue = new Queue[numThread];
 			Queue<String>[] bodyQueue = new Queue[numThread];
 			for (int i = 0; i < numThread; ++i) {
 			   idQueue[i] = new ArrayDeque<Integer>();
 			   bodyQueue[i] = new ArrayDeque<String>();
+			   pipeline[i] = new StanfordCoreNLP(props);
 			}
 
 			// Submitting the query to executor thread
@@ -128,7 +139,7 @@ public class FExtraction {
 				  + " Finish preparing all the query");
 			for (int i = 0; i < numThread; ++i) {
 			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-					 idQueue[i], bodyQueue[i]));
+					 idQueue[i], bodyQueue[i], pipeline[i]));
 			}
 			System.out.println("Iteration " + (index + 1)
 				  + " Finish submit to executors");

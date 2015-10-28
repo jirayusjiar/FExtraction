@@ -5,7 +5,6 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Properties;
 import java.util.Queue;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -28,15 +27,13 @@ public class ExtractionExecutor implements Runnable {
    }
 
    public ExtractionExecutor(int inputNumIteration, int inputThreadNumber,
-		 Queue<Integer> inputIdQueue, Queue<String> inputBodyQueue) {
+		 Queue<Integer> inputIdQueue, Queue<String> inputBodyQueue,
+		 StanfordCoreNLP inputPipeline) {
 	  this.numIteration = inputNumIteration;
 	  this.threadNumber = inputThreadNumber;
 	  this.idQueue = inputIdQueue;
 	  this.bodyQueue = inputBodyQueue;
-	  Properties props = new Properties();
-	  props.setProperty("annotators",
-			"tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-	  pipeline = new StanfordCoreNLP(props);
+	  pipeline = inputPipeline;
 
    }
 
@@ -70,6 +67,8 @@ public class ExtractionExecutor implements Runnable {
 			   preparedStatement.setString(1, localBody);
 			   preparedStatement.setInt(2, localId);
 			   preparedStatement.addBatch();
+			   System.out.println("Iteration " + numIteration + " Thread "
+					 + threadNumber + " : add batch id " + localId);
 			} else
 			   break;
 		 }
