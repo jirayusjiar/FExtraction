@@ -106,16 +106,16 @@ def getIdToProcess():
     print "Get text data to process politeness score"
 
 
-    outputId = []
+    outputId = set()
     for row in cursor:
         # row[0] id
-        outputId.append(row[0])
+        outputId.add(row[0])
     cursor.close()
     conn.close()
     print "Finish getting id to process politeness"
     return outputId
 
-def execute(listTargetId):
+def execute(setTargetId):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = psycopg2.connect(conn_string)
 
@@ -134,7 +134,7 @@ def execute(listTargetId):
         # row[0] id 
         # row[1] tokenizedSentence 
         # row [2] dependency Parsed
-        if(listTargetId.__contains__(row[0])==False):
+        if(row[0] not in setTargetId):
            continue
         sentences = row[1].split("\n")
         parses = row[2].split("\n")
