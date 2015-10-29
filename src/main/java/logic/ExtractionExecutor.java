@@ -68,7 +68,7 @@ public class ExtractionExecutor implements Runnable {
 			   preparedStatement.setInt(2, localId);
 			   preparedStatement.addBatch();
 			   ++appendingQuery;
-			   if (appendingQuery == 50) {
+			   if (appendingQuery == 20) {
 				  appendingQuery = 0;
 				  preparedStatement.executeBatch();
 				  preparedStatement.clearBatch();
@@ -77,10 +77,9 @@ public class ExtractionExecutor implements Runnable {
 							  + numIteration
 							  + " Thread "
 							  + threadNumber
-							  + " : 100 queries are appending -> Execute the update batch");
+							  + " : 20 queries are appending -> Execute the update batch");
 			   }
 			} else {
-			   preparedStatement.executeBatch();
 			   break;
 			}
 		 }
