@@ -68,9 +68,10 @@ public class ExtractionExecutor implements Runnable {
 			   preparedStatement.setInt(2, localId);
 			   preparedStatement.addBatch();
 			   ++appendingQuery;
-			   if (appendingQuery == 100) {
+			   if (appendingQuery == 50) {
 				  appendingQuery = 0;
 				  preparedStatement.executeBatch();
+				  preparedStatement.clearBatch();
 				  System.out
 						.println("Iteration "
 							  + numIteration
