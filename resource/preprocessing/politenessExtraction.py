@@ -98,10 +98,10 @@ def getIdToProcess():
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor()
-    print ("select id from question_features where \"politeness\" is null)")
+    print ("select id from question_features where \"politeness\" is null")
     #"Process query\nselect id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where id >= "+str(numIteration*numQuery)+" and id < "+str((numIteration+1)*numQuery)+" and \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null "
 
-    cursor.execute("select id from question_features where \"politeness\" is null)")
+    cursor.execute("select id from question_features where \"politeness\" is null")
 
     print "Get text data to process politeness score"
 
