@@ -42,7 +42,7 @@ public class ExtractionExecutor implements Runnable {
 	  // parse dependency
 	  System.out.println("Iteration " + numIteration + " Thread "
 			+ threadNumber + " : n(Queue) = " + idQueue.size());
-
+	  int appendingQuery = 0;
 	  int localId;
 	  String localBody;
 	  try (Connection dbConnection = connectToDB();
@@ -67,10 +67,21 @@ public class ExtractionExecutor implements Runnable {
 			   preparedStatement.setString(1, localBody);
 			   preparedStatement.setInt(2, localId);
 			   preparedStatement.addBatch();
-			   System.out.println("Iteration " + numIteration + " Thread "
-					 + threadNumber + " : add batch id " + localId);
-			} else
+			   ++appendingQuery;
+			   if (appendingQuery == 100) {
+				  appendingQuery = 0;
+				  preparedStatement.executeBatch();
+				  System.out
+						.println("Iteration "
+							  + numIteration
+							  + " Thread "
+							  + threadNumber
+							  + " : 100 queries are appending -> Execute the update batch");
+			   }
+			} else {
+			   preparedStatement.executeBatch();
 			   break;
+			}
 		 }
 
 		 // Exit from the loop -> Execute update batch
