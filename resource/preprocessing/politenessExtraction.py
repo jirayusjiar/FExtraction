@@ -98,10 +98,10 @@ def getIdToProcess():
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor()
-    print ("select id from question_features where \"politeness\" == 0")
+    print ("select id from question_features where \"politeness\" = 0")
     #"Process query\nselect id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where id >= "+str(numIteration*numQuery)+" and id < "+str((numIteration+1)*numQuery)+" and \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null "
 
-    cursor.execute("select id from question_features where \"politeness\" == 0")
+    cursor.execute("select id from question_features where \"politeness\" = 0")
 
     print "Get text data to process politeness score"
 
@@ -177,7 +177,7 @@ while True:
     # print the connection string we will use to connect
     print "Connecting to database\n	->%s" % (conn_string)
     targetId = getIdToProcess()
-    execute()
+    execute(targetId)
     print "Finish execution : %s" % time.ctime()
     print "Sleep the program for 1 hour"
     time.sleep( 3600 )
