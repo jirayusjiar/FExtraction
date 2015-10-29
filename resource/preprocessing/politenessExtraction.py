@@ -98,10 +98,10 @@ def getIdToProcess():
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor()
-    print ("select id from question_features where \"politeness\" is null")
+    print ("select id from question_features where \"politeness\" == 0")
     #"Process query\nselect id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where id >= "+str(numIteration*numQuery)+" and id < "+str((numIteration+1)*numQuery)+" and \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null "
 
-    cursor.execute("select id from question_features where \"politeness\" is null")
+    cursor.execute("select id from question_features where \"politeness\" == 0")
 
     print "Get text data to process politeness score"
 
@@ -134,19 +134,20 @@ def execute(listTargetId):
         # row[0] id 
         # row[1] tokenizedSentence 
         # row [2] dependency Parsed
-        if(listTargetId.__contains__(row[0])==False):
-            continue
+        #if(listTargetId.__contains__(row[0])==False):
+        #   continue
         sentences = row[1].split("\n")
         parses = row[2].split("\n")
         for i in range (0,len(parses)):
             parses[i] = parses[i].split("|")
             parses[i] = filter(None, parses[i])
         doc = {'sentences': sentences, 'parses': parses}
-        print doc
+        #print doc
         politenessScore = score(doc)
-        print politenessScore
+        #print politenessScore
         updateEntity.append({'id': row[0],'positive': politenessScore['polite']})
         print updateEntity
+
     cursor.close()
     conn.close()
     print "Finish preprocessing\nStart updating data to DB"
@@ -175,8 +176,8 @@ while True:
     print "Start execution : %s" % time.ctime()
     # print the connection string we will use to connect
     print "Connecting to database\n	->%s" % (conn_string)
-    targetId = getIdToProcess()
-    execute(targetId)
+    #targetId = getIdToProcess()
+    execute([])
     print "Finish execution : %s" % time.ctime()
     print "Sleep the program for 1 hour"
     time.sleep( 3600 )
