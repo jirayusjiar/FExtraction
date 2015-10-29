@@ -119,7 +119,8 @@ public class FExtraction {
 			ResultSet rs = executeQuery(dbConnection,
 				  "select id from question_features where id >="
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize) + " and \"politeness\" = 0");) {
+						+ ((index + 1) * querySize)
+						+ " and \"politeness\" != 0");) {
 		 System.out.println("Iteration " + (index + 1)
 			   + " Finish fetching query\nStart adding calculated id");
 		 if (rs != null) {
