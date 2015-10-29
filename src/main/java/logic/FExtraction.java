@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -24,7 +25,7 @@ public class FExtraction {
    // Real
    private static final int querySize = 10000;
    private static final int numIteration = 2600;
-   private static final int numThread = 8;
+   private static final int numThread = 6;
 
    private static StanfordCoreNLP[] pipeline;
    private static Queue<Integer>[] idQueue;
@@ -108,8 +109,36 @@ public class FExtraction {
 
    }
 
+   private static HashSet<Integer> getCalculated(int index, int querySize) {
+
+	  HashSet<Integer> output = new HashSet<Integer>();
+	  System.out.println("Iteration " + (index + 1)
+			+ " find calculated from id >=" + (index * querySize)
+			+ " and id < " + ((index + 1) * querySize));
+	  try (Connection dbConnection = connectToDB();
+			ResultSet rs = executeQuery(dbConnection,
+				  "select id from question_features where id >="
+						+ (index * querySize) + " and id < "
+						+ ((index + 1) * querySize) + " and \"politeness\" = 0");) {
+		 System.out.println("Iteration " + (index + 1)
+			   + " Finish fetching query\nStart adding calculated id");
+		 if (rs != null) {
+			while (rs.next()) {
+			   output.add(rs.getInt(1));
+			}
+		 }
+	  } catch (SQLException e) {
+		 e.printStackTrace();
+		 e.getNextException().printStackTrace();
+	  }
+
+	  return output;
+   }
+
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
+
+	  HashSet<Integer> calculatedId = getCalculated(index, querySize);
 
 	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
 			+ (index * querySize) + " and id < " + ((index + 1) * querySize));
@@ -129,6 +158,8 @@ public class FExtraction {
 			// Submitting the query to executor thread
 			int runner = 0;
 			while (rs.next()) {
+			   if (calculatedId.contains(rs.getInt("id")))
+				  continue;
 			   idQueue[runner].add(rs.getInt("id"));
 			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));
 			   ++runner;
