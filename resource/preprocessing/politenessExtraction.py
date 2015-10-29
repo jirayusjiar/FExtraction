@@ -134,8 +134,8 @@ def execute(listTargetId):
         # row[0] id 
         # row[1] tokenizedSentence 
         # row [2] dependency Parsed
-        #if(listTargetId.__contains__(row[0])==False):
-        #   continue
+        if(listTargetId.__contains__(row[0])==False):
+           continue
         sentences = row[1].split("\n")
         parses = row[2].split("\n")
         for i in range (0,len(parses)):
@@ -146,7 +146,7 @@ def execute(listTargetId):
         politenessScore = score(doc)
         #print politenessScore
         updateEntity.append({'id': row[0],'positive': politenessScore['polite']})
-        print updateEntity
+        print ("Id : "+str(row[0])+" Politeness : "+str(politenessScore['polite']))
 
     cursor.close()
     conn.close()
@@ -176,8 +176,8 @@ while True:
     print "Start execution : %s" % time.ctime()
     # print the connection string we will use to connect
     print "Connecting to database\n	->%s" % (conn_string)
-    #targetId = getIdToProcess()
-    execute([])
+    targetId = getIdToProcess()
+    execute()
     print "Finish execution : %s" % time.ctime()
     print "Sleep the program for 1 hour"
     time.sleep( 3600 )
