@@ -24,7 +24,7 @@ public class FExtraction {
    // Real
    private static final int querySize = 100000;
    private static final int numIteration = 260;
-   private static final int numThread = 8;
+   private static final int numThread = 4;
 
    private static StanfordCoreNLP[] pipeline;
    private static Queue<Integer>[] idQueue;
