@@ -92,16 +92,39 @@ def score(request):
     probs = {"polite": probs[0][1], "impolite": probs[0][0]}
     return probs
 
-def execute():
+def getIdToProcess():
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = psycopg2.connect(conn_string)
 
     # conn.cursor will return a cursor object, you can use this cursor to perform queries
     cursor = conn.cursor()
-    print ("select id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null and \"politeness\" is null")
+    print ("select id from question_features where \"politeness\" is null)")
     #"Process query\nselect id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where id >= "+str(numIteration*numQuery)+" and id < "+str((numIteration+1)*numQuery)+" and \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null "
 
-    cursor.execute("select id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null and \"politeness\" is null")
+    cursor.execute("select id from question_features where \"politeness\" is null)")
+
+    print "Get text data to process politeness score"
+
+
+    outputId = []
+    for row in cursor:
+        # row[0] id
+        outputId.append(row[0])
+    cursor.close()
+    conn.close()
+    print "Finish getting id to process politeness"
+    return outputId
+
+def execute(listTargetId):
+    # get a connection, if a connect cannot be made an exception will be raised here
+    conn = psycopg2.connect(conn_string)
+
+    # conn.cursor will return a cursor object, you can use this cursor to perform queries
+    cursor = conn.cursor()
+    print ("select id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null")
+    #"Process query\nselect id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where id >= "+str(numIteration*numQuery)+" and id < "+str((numIteration+1)*numQuery)+" and \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null "
+
+    cursor.execute("select id,\"tokenizedSentence\",\"dependencyParsed\" from question_preprocess where \"tokenizedSentence\" is not null and \"dependencyParsed\" is not null")
 
     print "Get text data to process politeness score"
 
@@ -111,6 +134,8 @@ def execute():
         # row[0] id 
         # row[1] tokenizedSentence 
         # row [2] dependency Parsed
+        if(listTargetId.__contains__(row[0])==False):
+            continue
         sentences = row[1].split("\n")
         parses = row[2].split("\n")
         for i in range (0,len(parses)):
@@ -150,7 +175,8 @@ while True:
     print "Start execution : %s" % time.ctime()
     # print the connection string we will use to connect
     print "Connecting to database\n	->%s" % (conn_string)
-    execute()
+    targetId = getIdToProcess()
+    execute(targetId)
     print "Finish execution : %s" % time.ctime()
     print "Sleep the program for 1 hour"
     time.sleep( 3600 )
