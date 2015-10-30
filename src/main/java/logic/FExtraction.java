@@ -25,7 +25,7 @@ public class FExtraction {
    // Real
    private static final int querySize = 10000;
    private static final int numIteration = 2600;
-   private static final int numThread = 8;
+   private static final int numThread = 6;
 
    private static StanfordCoreNLP[] pipeline;
    private static Queue<Integer>[] idQueue;
@@ -104,7 +104,7 @@ public class FExtraction {
 	  }
 
 	  System.out.println("Start the execution...");
-	  for (int i = 0; i < numIteration; ++i)
+	  for (int i = numIteration; i > 0; --i)
 		 execution(i, querySize);
 
    }
