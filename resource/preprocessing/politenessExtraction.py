@@ -139,6 +139,7 @@ def execute(setTargetId):
         sentences = row[1].split("\n")
         parses = row[2].split("\n")
         for i in range (0,len(parses)):
+            sentences[i] = sentences[i].decode('utf-8')
             parses[i] = parses[i].split("|")
             parses[i] = filter(None, parses[i])
         doc = {'sentences': sentences, 'parses': parses}
