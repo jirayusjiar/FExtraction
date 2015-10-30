@@ -170,6 +170,7 @@ def execute(setTargetId):
             updatePolitenessToDB(updateEntity)
             updateEntity = []
             countEntity = 0
+            print "Update 1000 entities politeness to DB"
     if len(updateEntity) != 0:
         updatePolitenessToDB(updateEntity)
     cursor.close()
