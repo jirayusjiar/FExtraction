@@ -115,6 +115,23 @@ def getIdToProcess():
     print "Finish getting id to process politeness"
     return outputId
 
+def updatePolitenessToDB(updateEntity):
+    updateConn = psycopg2.connect(conn_string)
+    updateCursor = updateConn.cursor()
+    updateCursor.executemany(
+            '''
+                UPDATE question_features
+                SET
+                    \"politeness\" = %(positive)s
+                WHERE
+                    id = %(id)s
+            ''',
+            updateEntity
+    )
+    updateConn.commit()
+    updateCursor.close()
+    updateConn.close()
+
 def execute(setTargetId):
     # get a connection, if a connect cannot be made an exception will be raised here
     conn = psycopg2.connect(conn_string)
@@ -128,7 +145,7 @@ def execute(setTargetId):
 
     print "Get text data to process politeness score"
 
-    
+    countEntity = 0
     updateEntity = []
     for row in cursor:
         # row[0] id 
@@ -147,28 +164,19 @@ def execute(setTargetId):
         politenessScore = score(doc)
         #print politenessScore
         updateEntity.append({'id': row[0],'positive': politenessScore['polite']})
+        countEntity = countEntity + 1
         print ("Id : "+str(row[0])+" Politeness : "+str(politenessScore['polite']))
-
+        if countEntity == 1000:
+            updatePolitenessToDB(updateEntity)
+            updateEntity = []
+            countEntity = 0
+    if len(updateEntity) != 0:
+        updatePolitenessToDB(updateEntity)
     cursor.close()
     conn.close()
     print "Finish preprocessing\nStart updating data to DB"
 
-    updateConn = psycopg2.connect(conn_string)
-    updateCursor = updateConn.cursor()
-    updateCursor.executemany(
-    '''
-        UPDATE question_features
-        SET
-            \"politeness\" = %(positive)s
-        WHERE
-            id = %(id)s
-    ''',
-    updateEntity
-    )
-    updateConn.commit()
     print "Finish updating the DB"
-    updateCursor.close()
-    updateConn.close()
 
 #Define our connection string
 conn_string = "host='163.221.172.217' dbname='so_msr2015' user='oss' password='kenjiro+'"
