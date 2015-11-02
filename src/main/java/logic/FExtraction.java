@@ -4,15 +4,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -25,11 +17,8 @@ public class FExtraction {
    // Real
    private static final int querySize = 10000;
    private static final int numIteration = 2600;
-   private static final int numThread = 6;
 
-   private static StanfordCoreNLP[] pipeline;
-   private static Queue<Integer>[] idQueue;
-   private static Queue<String>[] bodyQueue;
+   private static HashSet<Integer> questionFeatures = new HashSet<Integer>();
 
    private static Connection connectToDB() {
 
@@ -91,38 +80,18 @@ public class FExtraction {
 
    public static void main(String[] args) {
 	  System.out.println("Start preparing the environment");
-	  Properties props = new Properties();
-	  props.setProperty("annotators",
-			"tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-	  pipeline = new StanfordCoreNLP[numThread];
-	  idQueue = new Queue[numThread];
-	  bodyQueue = new Queue[numThread];
-	  for (int i = 0; i < numThread; ++i) {
-		 idQueue[i] = new ArrayDeque<Integer>();
-		 bodyQueue[i] = new ArrayDeque<String>();
-		 pipeline[i] = new StanfordCoreNLP(props);
-	  }
 
-	  System.out.println("Start the execution...");
-	  for (int i = numIteration; i > 0; --i)
-		 execution(i, querySize);
+	  questionFeatures = getFeatures();
+	  execution();
 
    }
 
-   private static HashSet<Integer> getCalculated(int index, int querySize) {
+   private static HashSet<Integer> getFeatures() {
 
 	  HashSet<Integer> output = new HashSet<Integer>();
-	  System.out.println("Iteration " + (index + 1)
-			+ " find calculated from id >=" + (index * querySize)
-			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features where id >="
-						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize)
-						+ " and \"politeness\" != 0");) {
-		 System.out.println("Iteration " + (index + 1)
-			   + " Finish fetching query\nStart adding calculated id");
+				  "select id from question_features");) {
 		 if (rs != null) {
 			while (rs.next()) {
 			   output.add(rs.getInt(1));
@@ -137,59 +106,21 @@ public class FExtraction {
    }
 
    // Divide dataset into small size
-   private static void execution(int index, int querySize) {
-
-	  HashSet<Integer> calculatedId = getCalculated(index, querySize);
-
-	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
-			+ (index * querySize) + " and id < " + ((index + 1) * querySize));
+   private static void execution() {
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id,\"tokenizedSentence\" from question_preprocess where id >="
-						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));) {
-		 System.out.println("Iteration " + (index + 1)
-			   + " Finish fetching query\nStart processing");
+			ResultSet rs = executeQuery(dbConnection, "select id from question");) {
+
 		 if (rs != null) {
-
-			// Init threadPool
-			ExecutorService threadPool = Executors
-				  .newFixedThreadPool(numThread);
-
-			// Submitting the query to executor thread
-			int runner = 0;
+			int id;
 			while (rs.next()) {
-			   if (calculatedId.contains(rs.getInt("id")))
-				  continue;
-			   idQueue[runner].add(rs.getInt("id"));
-			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));
-			   ++runner;
-			   if (runner == numThread)
-				  runner = 0;
+			   id = rs.getInt("id");
+			   if (!questionFeatures.contains(id))
+				  System.out.println("Id : " + id);
 			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish preparing all the query");
-			for (int i = 0; i < numThread; ++i) {
-			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-					 idQueue[i], bodyQueue[i], pipeline[i]));
-			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish submit to executors");
-
-			threadPool.shutdown();
-			while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
-			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish preprocessing\n");
-
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 		 e.getNextException().printStackTrace();
-	  } catch (InterruptedException e) {
-		 e.printStackTrace();
 	  }
-	  System.out.println("Iteration " + (index + 1)
-			+ " Iteration execution DONE :D");
    }
 }
