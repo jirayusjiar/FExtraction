@@ -110,7 +110,7 @@ public class FExtraction {
 
    }
 
-   private static HashSet<Integer> getCalculated(int index, int querySize) {
+   private static HashSet<Integer> getCalculate(int index, int querySize) {
 
 	  HashSet<Integer> output = new HashSet<Integer>();
 	  System.out.println("Iteration " + (index + 1)
@@ -120,8 +120,7 @@ public class FExtraction {
 			ResultSet rs = executeQuery(dbConnection,
 				  "select id from question_features where id >="
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize)
-						+ " and \"politeness\" != 0");) {
+						+ ((index + 1) * querySize) + " and \"politeness\" = 0");) {
 		 System.out.println("Iteration " + (index + 1)
 			   + " Finish fetching query\nStart adding calculated id");
 		 if (rs != null) {
@@ -140,7 +139,7 @@ public class FExtraction {
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
 
-	  HashSet<Integer> calculatedId = getCalculated(index, querySize);
+	  HashSet<Integer> calculateId = getCalculate(index, querySize);
 
 	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
 			+ (index * querySize) + " and id < " + ((index + 1) * querySize));
@@ -159,7 +158,7 @@ public class FExtraction {
 
 			// Submitting the query to executor thread
 			while (rs.next()) {
-			   if (calculatedId.contains(rs.getInt("id")))
+			   if (!calculateId.contains(rs.getInt("id")))
 				  continue;
 			   idQueue[runner].add(rs.getInt("id"));
 			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));

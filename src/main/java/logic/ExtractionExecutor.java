@@ -56,6 +56,14 @@ public class ExtractionExecutor implements Runnable {
 			   localId = this.idQueue.remove();
 			   localBody = this.bodyQueue.remove();
 
+			   // Set politeness to -1 to indicate that this has already
+			   // executed
+			   PreparedStatement preparedStatement1 = dbConnection
+					 .prepareStatement("UPDATE question_features SET \"politeness\" = ? WHERE id = ?");
+			   preparedStatement1.setDouble(1, -1.0);
+			   preparedStatement1.setInt(2, localId);
+			   preparedStatement1.execute();
+
 			   String[] sentences = localBody.split("\n");
 			   StringBuilder tmpBuilder = new StringBuilder();
 			   for (int i = 0; i < sentences.length; ++i) {
