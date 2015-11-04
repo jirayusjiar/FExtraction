@@ -167,21 +167,27 @@ public class FExtraction {
 			   if (runner == numThread)
 				  runner = 0;
 			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish preparing all the query");
-			for (int i = 0; i < numThread; ++i) {
-			   threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-					 idQueue[i], bodyQueue[i], pipeline[i]));
-			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish submit to executors");
 
-			threadPool.shutdown();
-			while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
+			int sizeTotal = 0;
+			for (runner = 0; runner < numThread; ++runner)
+			   sizeTotal += idQueue[runner].size();
+
+			if (sizeTotal > 700) {
+			   System.out.println("Iteration " + (index + 1)
+					 + " Finish preparing all the query");
+			   for (int i = 0; i < numThread; ++i) {
+				  threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
+						idQueue[i], bodyQueue[i], pipeline[i]));
+			   }
+			   System.out.println("Iteration " + (index + 1)
+					 + " Finish submit to executors");
+
+			   threadPool.shutdown();
+			   while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
+			   }
 			}
 			System.out.println("Iteration " + (index + 1)
 				  + " Finish preprocessing\n");
-
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
