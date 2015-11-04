@@ -7,8 +7,8 @@ public class FExtractionTest {
    @Test
    public void tryLoop() {
 
-	  int querySize = 10000;
-	  int numIteration = 2600;
+	  int querySize = 800;
+	  int numIteration = 32500;
 	  for (int index = 0; index < numIteration; ++index)
 		 System.out.println("Iteration " + (index + 1)
 			   + " Execution from id >=" + (index * querySize) + " and id < "
