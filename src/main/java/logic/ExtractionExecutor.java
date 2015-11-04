@@ -48,7 +48,7 @@ public class ExtractionExecutor implements Runnable {
 	  try (Connection dbConnection = connectToDB();
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("UPDATE question_preprocess SET \"dependencyParsed\" = ? WHERE id = ?");) {
-
+		 dbConnection.setAutoCommit(true);
 		 while (true) {
 			if (!this.idQueue.isEmpty()) {
 
