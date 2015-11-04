@@ -27,6 +27,7 @@ public class FExtraction {
    private static final int numIteration = 32500;
    private static final int numThread = 8;
 
+   private static int runner = 0;
    private static StanfordCoreNLP[] pipeline;
    private static Queue<Integer>[] idQueue;
    private static Queue<String>[] bodyQueue;
@@ -157,7 +158,6 @@ public class FExtraction {
 				  .newFixedThreadPool(numThread);
 
 			// Submitting the query to executor thread
-			int runner = 0;
 			while (rs.next()) {
 			   if (calculatedId.contains(rs.getInt("id")))
 				  continue;
@@ -169,8 +169,8 @@ public class FExtraction {
 			}
 
 			int sizeTotal = 0;
-			for (runner = 0; runner < numThread; ++runner)
-			   sizeTotal += idQueue[runner].size();
+			for (int i = 0; i < numThread; ++i)
+			   sizeTotal += idQueue[i].size();
 
 			if (sizeTotal > 700) {
 			   System.out.println("Iteration " + (index + 1)
