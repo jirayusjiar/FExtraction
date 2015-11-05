@@ -138,7 +138,12 @@ public class FExtraction {
 
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
-
+	  try {
+		 Thread.sleep(100);
+	  } catch (InterruptedException e1) {
+		 // TODO Auto-generated catch block
+		 e1.printStackTrace();
+	  }
 	  HashSet<Integer> calculateId = getCalculate(index, querySize);
 
 	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
