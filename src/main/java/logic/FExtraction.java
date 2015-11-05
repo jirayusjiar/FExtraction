@@ -23,8 +23,8 @@ public class FExtraction {
    // private static final int numThread = 5;
 
    // Real
-   private static final int querySize = 800;
-   private static final int numIteration = 32500;
+   private static final int querySize = 200;
+   private static final int numIteration = 130000;
    private static final int numThread = 8;
 
    private static int runner = 0;
@@ -171,7 +171,7 @@ public class FExtraction {
 			for (int i = 0; i < numThread; ++i)
 			   sizeTotal += idQueue[i].size();
 
-			if (sizeTotal > 700) {
+			if (sizeTotal > 150) {
 			   System.out.println("Iteration " + (index + 1)
 					 + " Finish preparing all the query");
 			   for (int i = 0; i < numThread; ++i) {
