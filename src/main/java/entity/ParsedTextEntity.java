@@ -8,4 +8,12 @@ public class ParsedTextEntity {
 	  this.parseText = inputText;
 	  this.id = inputId;
    }
+
+   public boolean equal(ParsedTextEntity input) {
+	  if (input == null || input.parseText == null)
+		 return false;
+	  if (id == input.id && parseText.equals(input.parseText))
+		 return true;
+	  return false;
+   }
 }
