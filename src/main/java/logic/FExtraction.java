@@ -18,9 +18,9 @@ public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
 
    // Test
-   // private static final int querySize = 10;
-   // private static final int numIteration = 2;
-   // private static final int numThread = 5;
+   // private static final int querySize = 100;
+   // private static final int numIteration = 130000;
+   // private static final int numThread = 2;
 
    // Real
    private static final int querySize = 200;
@@ -139,7 +139,7 @@ public class FExtraction {
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
 	  try {
-		 Thread.sleep(100);
+		 Thread.sleep(10);
 	  } catch (InterruptedException e1) {
 		 // TODO Auto-generated catch block
 		 e1.printStackTrace();

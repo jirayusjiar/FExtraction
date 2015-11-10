@@ -24,7 +24,8 @@ public class ExtractionExecutorTest {
    public void setUp() {
 
 	  Properties props2 = new Properties();
-	  props2.setProperty("annotators", "tokenize,ssplit,parse");
+	  props2.setProperty("annotators",
+			"tokenize,ssplit,pos,parse,lemma,ner,dcoref");
 	  pipeline2 = new StanfordCoreNLP(props2);
 
 	  Properties props = new Properties();
