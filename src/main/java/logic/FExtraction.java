@@ -122,8 +122,13 @@ public class FExtraction {
 
 	  System.out.println("Start the execution...");
 	  List<ParsedTextEntity> listToExecute = new ArrayList<ParsedTextEntity>();
+	  int size = 0;
 	  while (true) {
-		 if (listToExecute.size() == 0) {
+
+		 for (int x = 0; x < numThread; ++x)
+			size += idQueue[x].size();
+
+		 if (size == 0) {
 			listToExecute = getListToExecute();
 			if (listToExecute == null)
 			   break;
@@ -171,8 +176,9 @@ public class FExtraction {
 	  // Init threadPool
 	  ExecutorService threadPool = Executors.newFixedThreadPool(numThread);
 	  for (int i = 0; i < numThread; ++i) {
-		 threadPool.execute(new ExtractionExecutor(i + 1, idQueue[i],
-			   bodyQueue[i], pipeline[i]));
+		 if (idQueue[i].size() > 0)
+			threadPool.execute(new ExtractionExecutor(i + 1, idQueue[i],
+				  bodyQueue[i], pipeline[i]));
 	  }
 	  System.out.println("Finish submit data to executors");
 
