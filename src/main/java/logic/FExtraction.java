@@ -1,18 +1,28 @@
 package logic;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayDeque;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.codec.binary.Base64;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import entity.ParsedTextEntity;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -23,16 +33,15 @@ public class FExtraction {
    // private static final int numThread = 2;
 
    // Real
-   private static final int querySize = 200;
-   private static final int numIteration = 130000;
-   private static final int numThread = 8;
+   private static int numThread;
 
-   private static int runner = 0;
    private static StanfordCoreNLP[] pipeline;
    private static Queue<Integer>[] idQueue;
    private static Queue<String>[] bodyQueue;
+   private static Gson gson;
 
-   private static Connection connectToDB() {
+   private static void checkDBConnection() throws SQLException,
+		 ClassNotFoundException {
 
 	  System.out.println("-------- PostgreSQL "
 			+ "JDBC Connection Testing ------------");
@@ -46,7 +55,7 @@ public class FExtraction {
 		 System.out.println("Where is your PostgreSQL JDBC Driver? "
 			   + "Include in your library path!");
 		 e.printStackTrace();
-		 return null;
+		 throw e;
 
 	  }
 
@@ -64,16 +73,15 @@ public class FExtraction {
 
 		 System.out.println("Connection Failed! Check output console");
 		 e.printStackTrace();
-		 return null;
+		 throw e;
 
 	  }
 
 	  if (connection != null) {
 		 System.out.println("You made it, take control your database now!");
-		 return connection;
 	  } else {
 		 System.out.println("Failed to make connection!");
-		 return null;
+		 throw new SQLException("Failed to make connection");
 	  }
 
    }
@@ -90,11 +98,19 @@ public class FExtraction {
 
    }
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws ClassNotFoundException,
+		 SQLException {
+	  numThread = Integer.parseInt(args[0]);
+	  System.out.println("Number of thread : " + args[0]);
+	  System.out.println("Checking connection to DB");
+	  checkDBConnection();
+
 	  System.out.println("Start preparing the environment");
 	  Properties props = new Properties();
 	  props.setProperty("annotators",
 			"tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+	  gson = new Gson();
+
 	  pipeline = new StanfordCoreNLP[numThread];
 	  idQueue = new Queue[numThread];
 	  bodyQueue = new Queue[numThread];
@@ -105,101 +121,65 @@ public class FExtraction {
 	  }
 
 	  System.out.println("Start the execution...");
-	  for (int i = 0; i < numIteration; ++i)
-		 execution(i, querySize);
+	  List<ParsedTextEntity> listToExecute = new ArrayList<ParsedTextEntity>();
+	  while (true) {
+		 listToExecute = getListToExecute();
+		 if (listToExecute == null)
+			break;
+		 System.out.println("Finish getting the list\nStart processing");
+		 for (int x = 0; x < listToExecute.size(); ++x) {
+			idQueue[x % numThread].add(listToExecute.get(x).id);
+			bodyQueue[x % numThread].add(listToExecute.get(x).parseText);
+		 }
+		 execute();
+		 System.out.println("Finish execution");
+		 try {
+			Thread.sleep(100);
+		 } catch (InterruptedException e) {
+			e.printStackTrace();
+		 }
+	  }
 
    }
 
-   private static HashSet<Integer> getCalculate(int index, int querySize) {
+   private static List<ParsedTextEntity> getListToExecute() {
 
-	  HashSet<Integer> output = new HashSet<Integer>();
-	  System.out.println("Iteration " + (index + 1)
-			+ " find calculated from id >=" + (index * querySize)
-			+ " and id < " + ((index + 1) * querySize));
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features where id >="
-						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize) + " and \"politeness\" = 0");) {
-		 System.out.println("Iteration " + (index + 1)
-			   + " Finish fetching query\nStart adding calculated id");
-		 if (rs != null) {
-			while (rs.next()) {
-			   output.add(rs.getInt(1));
-			}
-		 }
-	  } catch (SQLException e) {
+	  Document doc;
+	  try {
+		 doc = Jsoup.connect("http://localhost:8080").get();
+		 String[] fetchedText = doc.text().split(" ");
+
+		 System.out.println("Now extracting " + fetchedText[0] + " from "
+			   + fetchedText[1]);
+		 byte[] decodedBytes = Base64.decodeBase64(fetchedText[2]);
+		 String decodedString = new String(decodedBytes);
+		 return gson.fromJson(decodedString,
+			   new TypeToken<List<ParsedTextEntity>>() {
+			   }.getType());
+
+	  } catch (IOException e) {
 		 e.printStackTrace();
-		 e.getNextException().printStackTrace();
+		 return null;
 	  }
-
-	  return output;
    }
 
    // Divide dataset into small size
-   private static void execution(int index, int querySize) {
-	  try {
-		 Thread.sleep(10);
-	  } catch (InterruptedException e1) {
-		 // TODO Auto-generated catch block
-		 e1.printStackTrace();
+   private static void execute() {
+
+	  // Init threadPool
+	  ExecutorService threadPool = Executors.newFixedThreadPool(numThread);
+	  for (int i = 0; i < numThread; ++i) {
+		 threadPool.execute(new ExtractionExecutor(i + 1, idQueue[i],
+			   bodyQueue[i], pipeline[i]));
 	  }
-	  HashSet<Integer> calculateId = getCalculate(index, querySize);
+	  System.out.println("Finish submit data to executors");
 
-	  System.out.println("Iteration " + (index + 1) + " Execution from id >="
-			+ (index * querySize) + " and id < " + ((index + 1) * querySize));
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id,\"tokenizedSentence\" from question_preprocess where id >="
-						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));) {
-		 System.out.println("Iteration " + (index + 1)
-			   + " Finish fetching query\nStart processing");
-		 if (rs != null) {
-
-			// Init threadPool
-			ExecutorService threadPool = Executors
-				  .newFixedThreadPool(numThread);
-
-			// Submitting the query to executor thread
-			while (rs.next()) {
-			   if (!calculateId.contains(rs.getInt("id")))
-				  continue;
-			   idQueue[runner].add(rs.getInt("id"));
-			   bodyQueue[runner].add(rs.getString("tokenizedSentence"));
-			   ++runner;
-			   if (runner == numThread)
-				  runner = 0;
-			}
-
-			int sizeTotal = 0;
-			for (int i = 0; i < numThread; ++i)
-			   sizeTotal += idQueue[i].size();
-
-			if (sizeTotal > 150) {
-			   System.out.println("Iteration " + (index + 1)
-					 + " Finish preparing all the query");
-			   for (int i = 0; i < numThread; ++i) {
-				  threadPool.execute(new ExtractionExecutor(index + 1, i + 1,
-						idQueue[i], bodyQueue[i], pipeline[i]));
-			   }
-			   System.out.println("Iteration " + (index + 1)
-					 + " Finish submit to executors");
-
-			   threadPool.shutdown();
-			   while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
-			   }
-			}
-			System.out.println("Iteration " + (index + 1)
-				  + " Finish preprocessing\n");
+	  threadPool.shutdown();
+	  try {
+		 while (!threadPool.awaitTermination(24L, TimeUnit.HOURS)) {
 		 }
-	  } catch (SQLException e) {
-		 e.printStackTrace();
-		 e.getNextException().printStackTrace();
 	  } catch (InterruptedException e) {
 		 e.printStackTrace();
 	  }
-	  System.out.println("Iteration " + (index + 1)
-			+ " Iteration execution DONE :D");
    }
 }

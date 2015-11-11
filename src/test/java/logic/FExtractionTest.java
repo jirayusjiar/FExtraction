@@ -1,18 +1,34 @@
 package logic;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.commons.codec.binary.Base64;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.Test;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import entity.ParsedTextEntity;
 
 public class FExtractionTest {
 
    @Test
-   public void tryLoop() {
+   public void tryLoop() throws IOException {
+	  System.out.println("Try get html");
+	  Document doc = Jsoup.connect("http://localhost:8080").get();
+	  String[] fetchedText = doc.text().split(" ");
+	  Gson gson = new Gson();
+	  byte[] decodedBytes = Base64.decodeBase64(fetchedText[2]);
+	  String decodedString = new String(decodedBytes);
+	  System.out.println("decodedBytes " + decodedString);
+	  List<ParsedTextEntity> outputFromDecode = gson.fromJson(decodedString,
+			new TypeToken<List<ParsedTextEntity>>() {
+			}.getType());
 
-	  int querySize = 800;
-	  int numIteration = 32500;
-	  for (int index = 0; index < numIteration; ++index)
-		 System.out.println("Iteration " + (index + 1)
-			   + " Execution from id >=" + (index * querySize) + " and id < "
-			   + ((index + 1) * querySize));
+	  System.out.println(doc.text());
    }
 
 }

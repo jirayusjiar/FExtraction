@@ -21,15 +21,13 @@ public class ExtractionExecutor implements Runnable {
    private Queue<String> bodyQueue;
    private StanfordCoreNLP pipeline;
    private int threadNumber;
-   private int numIteration;
 
    public ExtractionExecutor() {
    }
 
-   public ExtractionExecutor(int inputNumIteration, int inputThreadNumber,
+   public ExtractionExecutor(int inputThreadNumber,
 		 Queue<Integer> inputIdQueue, Queue<String> inputBodyQueue,
 		 StanfordCoreNLP inputPipeline) {
-	  this.numIteration = inputNumIteration;
 	  this.threadNumber = inputThreadNumber;
 	  this.idQueue = inputIdQueue;
 	  this.bodyQueue = inputBodyQueue;
@@ -40,8 +38,8 @@ public class ExtractionExecutor implements Runnable {
    @Override
    public void run() {
 	  // parse dependency
-	  System.out.println("Iteration " + numIteration + " Thread "
-			+ threadNumber + " : n(Queue) = " + idQueue.size());
+	  System.out.println("Thread " + threadNumber + " : n(Queue) = "
+			+ idQueue.size());
 	  int appendingQuery = 0;
 	  int localId;
 	  String localBody;
@@ -81,9 +79,7 @@ public class ExtractionExecutor implements Runnable {
 				  preparedStatement.executeBatch();
 				  preparedStatement.clearBatch();
 				  System.out
-						.println("Iteration "
-							  + numIteration
-							  + " Thread "
+						.println("Thread "
 							  + threadNumber
 							  + " : 20 queries are appending -> Execute the update batch");
 			   }
@@ -94,14 +90,12 @@ public class ExtractionExecutor implements Runnable {
 
 		 // Exit from the loop -> Execute update batch
 		 System.out
-			   .println("Iteration "
-					 + numIteration
-					 + " Thread "
+			   .println("Thread "
 					 + threadNumber
 					 + " : Finish preparing update batch -> Execute the update batch");
 		 preparedStatement.executeBatch();
-		 System.out.println("Iteration " + numIteration + " Thread "
-			   + threadNumber + " : Thread execution DONE :3");
+		 System.out.println("Thread " + threadNumber
+			   + " : Thread execution DONE :3");
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 		 e.getNextException().printStackTrace();
@@ -110,8 +104,7 @@ public class ExtractionExecutor implements Runnable {
 
    private Connection connectToDB() {
 
-	  System.out.println("Iteration " + numIteration + " Thread "
-			+ threadNumber + " -------- PostgreSQL "
+	  System.out.println("Thread " + threadNumber + " -------- PostgreSQL "
 			+ "JDBC Connection Testing ------------");
 
 	  try {
@@ -120,16 +113,16 @@ public class ExtractionExecutor implements Runnable {
 
 	  } catch (ClassNotFoundException e) {
 
-		 System.out.println("Iteration " + numIteration + " Thread "
-			   + threadNumber + " Where is your PostgreSQL JDBC Driver? "
+		 System.out.println("Thread " + threadNumber
+			   + " Where is your PostgreSQL JDBC Driver? "
 			   + "Include in your library path!");
 		 e.printStackTrace();
 		 return null;
 
 	  }
 
-	  System.out.println("Iteration " + numIteration + " Thread "
-			+ threadNumber + " PostgreSQL JDBC Driver Registered!");
+	  System.out.println("Thread " + threadNumber
+			+ " PostgreSQL JDBC Driver Registered!");
 
 	  Connection connection = null;
 
@@ -141,21 +134,20 @@ public class ExtractionExecutor implements Runnable {
 
 	  } catch (SQLException e) {
 
-		 System.out.println("Iteration " + numIteration + " Thread "
-			   + threadNumber + " Connection Failed! Check output console");
+		 System.out.println("Thread " + threadNumber
+			   + " Connection Failed! Check output console");
 		 e.printStackTrace();
 		 return null;
 
 	  }
 
 	  if (connection != null) {
-		 System.out
-			   .println("Iteration " + numIteration + " Thread " + threadNumber
-					 + " You made it, take control your database now!");
+		 System.out.println("Thread " + threadNumber
+			   + " You made it, take control your database now!");
 		 return connection;
 	  } else {
-		 System.out.println("Iteration " + numIteration + " Thread "
-			   + threadNumber + " Failed to make connection!");
+		 System.out.println("Thread " + threadNumber
+			   + " Failed to make connection!");
 		 return null;
 	  }
 
