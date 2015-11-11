@@ -146,7 +146,7 @@ public class FExtraction {
 
 	  Document doc;
 	  try {
-		 doc = Jsoup.connect("http://localhost:8080").get();
+		 doc = Jsoup.connect("http://163.221.172.217:8080").get();
 		 String[] fetchedText = doc.text().split(" ");
 
 		 System.out.println("Now extracting " + fetchedText[0] + " from "
