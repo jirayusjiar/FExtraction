@@ -124,7 +124,7 @@ public class FExtraction {
 	  List<ParsedTextEntity> listToExecute = new ArrayList<ParsedTextEntity>();
 	  int size = 0;
 	  while (true) {
-
+		 size = 0;
 		 for (int x = 0; x < numThread; ++x)
 			size += idQueue[x].size();
 
