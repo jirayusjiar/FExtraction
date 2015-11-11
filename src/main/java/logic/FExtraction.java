@@ -123,9 +123,11 @@ public class FExtraction {
 	  System.out.println("Start the execution...");
 	  List<ParsedTextEntity> listToExecute = new ArrayList<ParsedTextEntity>();
 	  while (true) {
-		 listToExecute = getListToExecute();
-		 if (listToExecute == null)
-			break;
+		 if (listToExecute.size() == 0) {
+			listToExecute = getListToExecute();
+			if (listToExecute == null)
+			   break;
+		 }
 		 System.out.println("Finish getting the list\nStart processing");
 		 for (int x = 0; x < listToExecute.size(); ++x) {
 			idQueue[x % numThread].add(listToExecute.get(x).id);
