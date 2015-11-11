@@ -21,6 +21,8 @@ public class ExtractionExecutor implements Runnable {
    private Queue<String> bodyQueue;
    private StanfordCoreNLP pipeline;
    private int threadNumber;
+   private int localId;
+   private String localBody;
 
    public ExtractionExecutor() {
    }
@@ -41,11 +43,32 @@ public class ExtractionExecutor implements Runnable {
 	  System.out.println("Thread " + threadNumber + " : n(Queue) = "
 			+ idQueue.size());
 	  int appendingQuery = 0;
-	  int localId;
-	  String localBody;
+
 	  try (Connection dbConnection = connectToDB();
 			PreparedStatement preparedStatement = dbConnection
 				  .prepareStatement("UPDATE question_preprocess SET \"dependencyParsed\" = ? WHERE id = ?");) {
+		 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			public void run() {
+			   try {
+				  System.out.println("Try revert the half processed entity");
+				  PreparedStatement preparedStatement1 = dbConnection
+						.prepareStatement("UPDATE question_features SET \"politeness\" = ? WHERE id = ?");
+				  preparedStatement1.setDouble(1, 0);
+				  preparedStatement1.setInt(2, localId);
+				  preparedStatement1.execute();
+			   } catch (Exception e) {
+				  e.printStackTrace();
+			   }
+			   try {
+				  System.out.println("Execute update the extracted entities");
+				  preparedStatement.executeBatch();
+				  preparedStatement.close();
+			   } catch (Exception e) {
+				  e.printStackTrace();
+			   }
+			   System.out.println("Done\nThank you very much _/\\_");
+			}
+		 }, "Shutdown-thread"));
 		 dbConnection.setAutoCommit(true);
 		 while (true) {
 			if (!this.idQueue.isEmpty()) {
