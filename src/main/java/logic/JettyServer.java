@@ -28,9 +28,9 @@ public class JettyServer extends AbstractHandler {
    private static volatile List<ParsedTextEntity> tmpList = new ArrayList<ParsedTextEntity>();
    private static volatile int distributedId = 0;
    private static volatile boolean running = false;
-   private static final int fetchSize = 1000;
-   private static final int nIteration = 26000;
-   private static int index = 4575;// 4575
+   private static final int fetchSize = 2000;
+   private static final int nIteration = 13000;
+   private static int index = 0;// 4575
    private static int leftToExecute;
 
    private static Connection connectToDB() {
@@ -161,7 +161,7 @@ public class JettyServer extends AbstractHandler {
 			   while (rs.next()) {
 				  tmpList.add(new ParsedTextEntity(rs.getInt(1), rs
 						.getString(2)));
-				  if (tmpList.size() == 100) {
+				  if (tmpList.size() == 200) {
 					 distributedDataList.add(tmpList);
 					 tmpList = new ArrayList<ParsedTextEntity>();
 				  }
