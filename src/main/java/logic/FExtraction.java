@@ -138,6 +138,7 @@ public class FExtraction {
 			idQueue[x % numThread].add(listToExecute.get(x).id);
 			bodyQueue[x % numThread].add(listToExecute.get(x).parseText);
 		 }
+		 listToExecute.clear();
 		 execute();
 		 System.out.println("Finish execution");
 		 try {
