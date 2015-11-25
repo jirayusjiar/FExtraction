@@ -1,10 +1,12 @@
 package logic;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class FExtraction {
    // Last index is around 26 million == querySize*numIteration>26000000
@@ -14,11 +16,7 @@ public class FExtraction {
    // private static final int numIteration = 2;
    // private static final int numThread = 5;
 
-   // Real
-   private static final int querySize = 10000;
-   private static final int numIteration = 2600;
-
-   private static HashSet<Integer> questionFeatures = new HashSet<Integer>();
+   private static Map<Integer, Integer> questionDate = new TreeMap<Integer, Integer>();
 
    private static Connection connectToDB() {
 
@@ -81,41 +79,31 @@ public class FExtraction {
    public static void main(String[] args) {
 	  System.out.println("Start preparing the environment");
 
-	  questionFeatures = getFeatures();
 	  execution();
-
+	  for (Integer dateKey : questionDate.keySet())
+		 System.out.println(dateKey + "," + questionDate.get(dateKey));
    }
 
-   private static HashSet<Integer> getFeatures() {
-
-	  HashSet<Integer> output = new HashSet<Integer>();
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features");) {
-		 if (rs != null) {
-			while (rs.next()) {
-			   output.add(rs.getInt(1));
-			}
-		 }
-	  } catch (SQLException e) {
-		 e.printStackTrace();
-		 e.getNextException().printStackTrace();
-	  }
-
-	  return output;
+   private static int dateToInt(Date inputDate) {
+	  return (inputDate.getYear() + 1900) * 10000 + inputDate.getMonth() * 100
+			+ inputDate.getDate();
    }
 
    // Divide dataset into small size
    private static void execution() {
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection, "select id from question");) {
+			ResultSet rs = executeQuery(dbConnection,
+				  "select creation_date from question");) {
 
 		 if (rs != null) {
 			int id;
 			while (rs.next()) {
-			   id = rs.getInt("id");
-			   if (!questionFeatures.contains(id))
-				  System.out.println("Id : " + id);
+			   int dateIntFormat = dateToInt(rs.getDate("creation_date"));
+			   if (questionDate.containsKey(dateIntFormat))
+				  questionDate.put(dateIntFormat,
+						questionDate.get(dateIntFormat) + 1);
+			   else
+				  questionDate.put(dateIntFormat, 1);
 			}
 		 }
 	  } catch (SQLException e) {
