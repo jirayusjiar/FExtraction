@@ -103,7 +103,6 @@ public class FExtraction {
    private static void addBatch(Date voteDate, int userId, int value,
 		 int voteType) {
 	  try {
-		 preparedStatement.clearBatch();
 		 preparedStatement.setInt(1, count);
 		 preparedStatement.setDate(2, voteDate);
 		 preparedStatement.setInt(3, userId);
@@ -136,7 +135,7 @@ public class FExtraction {
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 			preparedStatement = dbConnection
-				  .prepareStatement("INSERT INTO  VoteHistory VALUES (?,?,?,?,?)");
+				  .prepareStatement("INSERT INTO \"VoteHistory\" VALUES (?,?,?,?,?)");
 
 			// Process through the resultset of query
 			int voteType, voteUserId, bountyAmount, postParentId, postUserId, postLastEditUserId, postTypeId;
