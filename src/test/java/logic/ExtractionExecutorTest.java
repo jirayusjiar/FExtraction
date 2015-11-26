@@ -5,10 +5,6 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.junit.Test;
-
-import uk.ac.wlv.sentistrength.SentiStrength;
-
 public class ExtractionExecutorTest {
 
    private static Connection connectToDB() {
@@ -69,45 +65,4 @@ public class ExtractionExecutorTest {
 
    }
 
-   @Test
-   public void test() {
-	  String ssthInitialisationAndText[] = { "sentidata",
-			"resource/SentiStrength/SentStrength_Data_Sept2011/" };
-
-	  String ssthInitialisationAndText2[] = { "sentidata",
-			"resource/SentiStrength/SentStrength_Data_Sept2011/", "explain" };
-
-	  SentiStrength classifier = new SentiStrength();
-	  classifier.initialise(ssthInitialisationAndText);
-
-	  SentiStrength classifier2 = new SentiStrength();
-	  classifier2.initialise(ssthInitialisationAndText2);
-
-	  String input = "I want to create a web application. But it did not work and I have the process";
-
-	  System.out.println(classifier.computeSentimentScores(input));
-
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "select \"tokenizedSentence\" from question_preprocess limit 100");) {
-		 System.out.println("Finish fetching query\nStart processing");
-		 if (rs != null) {
-			while (rs.next()) {
-			   System.out.println(rs.getString(1));
-			   System.out.println(classifier.computeSentimentScores(rs
-					 .getString(1)));
-			   System.out.println(classifier2.computeSentimentScores(rs
-					 .getString(1)));
-			}
-
-		 }
-	  } catch (SQLException e) {
-		 e.printStackTrace();
-		 e.getNextException().printStackTrace();
-	  }
-	  System.out.println("Done :D");
-	  String pattern = "I'm missing a parenthesis. But where? :(";
-	  System.out.println(classifier.computeSentimentScores(pattern));
-	  System.out.println(classifier2.computeSentimentScores(pattern));
-   }
 }
