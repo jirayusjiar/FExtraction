@@ -5,17 +5,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import entity.ParsedTextEntity;
-import entity.PostEntity;
+import uk.ac.wlv.sentistrength.SentiStrength;
 
 public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
@@ -23,6 +15,7 @@ public class FExtraction {
    private static final int numIteration = 27;
 
    private static HashSet<Integer> targetId = new HashSet<Integer>();
+   private static SentiStrength classifierModel = new SentiStrength();
 
    private static Connection connectToDB() {
 
@@ -83,6 +76,13 @@ public class FExtraction {
    }
 
    public static void main(String[] args) {
+
+	  String ssthInitialisationAndText[] = { "sentidata",
+			"resource/SentiStrength/SentStrength_Data_Sept2011/" };
+
+	  classifierModel = new SentiStrength();
+	  classifierModel.initialise(ssthInitialisationAndText);
+
 	  System.out.println("Get targetId...");
 	  getTargetId();
 	  System.out.println("Start the execution...");
@@ -94,7 +94,7 @@ public class FExtraction {
    public static void getTargetId() {
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select id from question_features");) {
+				  "select id from question_features where \"sentimentalTotal\" is null");) {
 		 System.out.println("Finish fetching query\nStart adding executed id");
 		 if (rs != null) {
 			while (rs.next()) {
@@ -109,54 +109,49 @@ public class FExtraction {
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
 
+	  String[] tmpStringArr;
+	  Integer[] sentimentalScore = new Integer[2];
+
 	  System.out.println("Execution from id >=" + (index * querySize)
 			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select id,body from question where id >="
+				  "select id,\"tokenizedSentence\" from question_preprocess where id >="
 						+ (index * querySize) + " and id < "
 						+ ((index + 1) * querySize));
 			PreparedStatement preparedStatement = dbConnection
-				  .prepareStatement("INSERT INTO question_preprocess (id,\"parsedText\") values (?,?)")) {
+				  .prepareStatement("UPDATE question_features set \"sentimentalPositive\" = ?, \"sentimentalNegative\" = ?, \"sentimentalTotal\" = ? where id = ?")) {
 
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
-
-			ExecutorService threadPool = Executors.newFixedThreadPool(136);
-			List<Future<ParsedTextEntity>> list = new ArrayList<Future<ParsedTextEntity>>();
 
 			// Process through the resultset of query
 			while (rs.next()) {
 			   if (!targetId.contains(rs.getInt(1)))
 				  continue;
-			   PostEntity postEnt = new PostEntity(rs);
-			   Callable<ParsedTextEntity> callable = new ExtractionExecutor(
-					 postEnt);
-			   list.add(threadPool.submit(callable));
-			}
-			System.out.println("Finish preprocessing\nStart putting to DB");
 
-			if (!list.isEmpty()) {
+			   tmpStringArr = classifierModel.computeSentimentScores(
+					 rs.getString(2)).split(" ");
 
-			   // Insert into db
-			   for (Future<ParsedTextEntity> readEnt : list) {
-				  preparedStatement.clearParameters();
-				  ParsedTextEntity entToDb = readEnt.get();
-				  preparedStatement.setInt(1, entToDb.id);
-				  preparedStatement.setString(2, entToDb.parseText);
-				  preparedStatement.addBatch();
-			   }
-			   preparedStatement.executeBatch();
+			   for (int x = 0; x < 2; ++x)
+				  sentimentalScore[x] = Integer.parseInt(tmpStringArr[x]);
+
+			   preparedStatement.clearParameters();
+			   preparedStatement.setInt(1, sentimentalScore[0]);
+			   preparedStatement.setInt(2, sentimentalScore[1]);
+			   preparedStatement.setInt(3, sentimentalScore[0]
+					 + sentimentalScore[1]);
+			   preparedStatement.setInt(4, rs.getInt(1));
+			   preparedStatement.addBatch();
+
 			}
+			preparedStatement.executeBatch();
 		 }
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 		 e.getNextException().printStackTrace();
-	  } catch (InterruptedException e) {
-		 e.printStackTrace();
-	  } catch (ExecutionException e) {
-		 e.printStackTrace();
 	  }
+
 	  System.out.println("Done :D");
    }
 }
