@@ -23,9 +23,15 @@ public class FExtraction {
    // private static final int numThread = 5;
 
    // Real
-   private static final int querySize = 100;
-   private static final int numIteration = 260000;
+<<<<<<< HEAD
+   private static final int querySize = 800;
+   private static final int numIteration = 32500;
    private static final int numThread = 4;
+=======
+   private static final int querySize = 200;
+   private static final int numIteration = 130000;
+   private static final int numThread = 8;
+>>>>>>> origin/DenpendencyParse
 
    private static int runner = 0;
    private static StanfordCoreNLP[] pipeline;
@@ -139,7 +145,7 @@ public class FExtraction {
    // Divide dataset into small size
    private static void execution(int index, int querySize) {
 	  try {
-		 Thread.sleep(20);
+		 Thread.sleep(100);
 	  } catch (InterruptedException e1) {
 		 // TODO Auto-generated catch block
 		 e1.printStackTrace();
@@ -176,7 +182,7 @@ public class FExtraction {
 			for (int i = 0; i < numThread; ++i)
 			   sizeTotal += idQueue[i].size();
 
-			if (sizeTotal > 110) {
+			if (sizeTotal > 150) {
 			   System.out.println("Iteration " + (index + 1)
 					 + " Finish preparing all the query");
 			   for (int i = 0; i < numThread; ++i) {
