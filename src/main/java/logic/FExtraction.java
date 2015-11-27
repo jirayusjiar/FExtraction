@@ -206,7 +206,7 @@ public class FExtraction {
 
 			// Process through the resultset of query
 			int postId, userId, reputation;
-			Integer[] badgeSum = null;
+			Integer[] badgeSum = new Integer[] { 0, 0 };
 			Date creationDate;
 			while (rs.next()) {
 
