@@ -13,7 +13,7 @@ import java.util.TreeMap;
 public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
    private static final int querySize = 1000000;
-   private static final int numIteration = 12;
+   private static final int numIteration = 26;
    private static final String[] questionBadges = new String[] { "Altruist",
 		 "Benefactor", "Curious", "Inquisitive", "Socratic",
 		 "Favorite Question", "Stellar Question", "Investor", "Nice Question",
@@ -90,7 +90,7 @@ public class FExtraction {
 
    public static void main(String[] args) {
 
-	  System.out.println("Get user information...");
+	  System.out.println("BadgeExcution\nGet user information...");
 	  getUserInformation();
 	  System.out.println("Start the execution...");
 	  for (int i = 0; i < numIteration; ++i)
@@ -115,36 +115,42 @@ public class FExtraction {
    }
 
    public static void getUserInformation() {
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "SELECT user_id,name,date from badges");) {
-		 System.out.println("Finish fetching query\nStart adding executed id");
-		 int uid, index;
-		 String badgeName;
-		 Date timestamp;
-		 if (rs != null) {
-			while (rs.next()) {
-			   badgeName = rs.getString(2);
-			   index = getBadgeType(badgeName);
+	  for (int iteration = 0; iteration < 12; ++iteration) {
+		 try (Connection dbConnection = connectToDB();
+			   ResultSet rs = executeQuery(dbConnection,
+					 "SELECT user_id,name,date from badges where id >"
+						   + (iteration * querySize) + " and id < "
+						   + ((iteration + 1) * querySize));) {
+			System.out.println("Finish fetching query of iteration "
+				  + (iteration + 1) + "\nStart adding executed id");
+			int uid, index;
+			String badgeName;
+			Date timestamp;
+			if (rs != null) {
+			   while (rs.next()) {
+				  badgeName = rs.getString(2);
+				  index = getBadgeType(badgeName);
 
-			   if (index == 2)
-				  continue;
+				  if (index == 2)
+					 continue;
 
-			   timestamp = rs.getDate(3);
-			   uid = rs.getInt(1);
+				  timestamp = rs.getDate(3);
+				  uid = rs.getInt(1);
 
-			   if (!uidTimestamp.containsKey(uid))
-				  uidTimestamp.put(uid, new TreeMap<Date, Integer[]>());
+				  if (!uidTimestamp.containsKey(uid))
+					 uidTimestamp.put(uid, new TreeMap<Date, Integer[]>());
 
-			   if (!uidTimestamp.get(uid).containsKey(timestamp))
-				  uidTimestamp.get(uid).put(timestamp, new Integer[] { 0, 0 });
+				  if (!uidTimestamp.get(uid).containsKey(timestamp))
+					 uidTimestamp.get(uid).put(timestamp,
+						   new Integer[] { 0, 0 });
 
-			   ++uidTimestamp.get(uid).get(timestamp)[index];
+				  ++uidTimestamp.get(uid).get(timestamp)[index];
 
+			   }
 			}
+		 } catch (Exception e) {
+			e.printStackTrace();
 		 }
-	  } catch (Exception e) {
-		 e.printStackTrace();
 	  }
    }
 
