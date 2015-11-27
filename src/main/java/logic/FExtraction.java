@@ -89,33 +89,40 @@ public class FExtraction {
    }
 
    public static void getUserInformation() {
-	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(dbConnection,
-				  "SELECT \"timeStamp\", \"userId\", value, \"voteType\" FROM \"VoteHistory\"");) {
-		 System.out.println("Finish fetching query\nStart adding executed id");
-		 int uid, val, voteType;
-		 Date timestamp;
-		 if (rs != null) {
-			while (rs.next()) {
-			   timestamp = rs.getDate(1);
-			   uid = rs.getInt(2);
-			   val = rs.getInt(3);
-			   voteType = rs.getInt(4);
+	  for (int iteration = 0; iteration < 63; ++iteration) {
+		 try (Connection dbConnection = connectToDB();
+			   ResultSet rs = executeQuery(
+					 dbConnection,
+					 "SELECT \"timeStamp\", \"userId\", value, \"voteType\" FROM \"VoteHistory\" where id >"
+						   + (iteration * querySize)
+						   + " and id < "
+						   + ((iteration + 1) * querySize + 1));) {
+			System.out.println("Finish fetching query of iteration "
+				  + (iteration + 1) + "\nStart adding executed id");
+			int uid, val, voteType;
+			Date timestamp;
+			if (rs != null) {
+			   while (rs.next()) {
+				  timestamp = rs.getDate(1);
+				  uid = rs.getInt(2);
+				  val = rs.getInt(3);
+				  voteType = rs.getInt(4);
 
-			   if (!uidTimestamp.containsKey(uid))
-				  uidTimestamp.put(uid, new TreeMap<Date, VoteInstance>());
+				  if (!uidTimestamp.containsKey(uid))
+					 uidTimestamp.put(uid, new TreeMap<Date, VoteInstance>());
 
-			   if (uidTimestamp.get(uid).containsKey(timestamp)) {
-				  uidTimestamp.get(uid).get(timestamp).add(voteType, val);
-			   } else {
-				  uidTimestamp.get(uid).put(timestamp,
-						new VoteInstance(voteType, val));
+				  if (uidTimestamp.get(uid).containsKey(timestamp)) {
+					 uidTimestamp.get(uid).get(timestamp).add(voteType, val);
+				  } else {
+					 uidTimestamp.get(uid).put(timestamp,
+						   new VoteInstance(voteType, val));
+				  }
+
 			   }
-
 			}
+		 } catch (Exception e) {
+			e.printStackTrace();
 		 }
-	  } catch (Exception e) {
-		 e.printStackTrace();
 	  }
    }
 
@@ -162,7 +169,7 @@ public class FExtraction {
 			ResultSet rs = executeQuery(dbConnection,
 				  "SELECT id, creation_date, owner_user_id FROM question WHERE id >"
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));) {
+						+ ((index + 1) * querySize + 1));) {
 
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
