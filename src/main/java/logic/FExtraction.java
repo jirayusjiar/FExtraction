@@ -7,15 +7,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+
+import entity.VoteInstance;
 
 public class FExtraction {
-   // Last index around 75 million == querySize*numIteration>75000000
+   // Last index around 26 million == querySize*numIteration>26000000
    private static final int querySize = 1000000;
-   private static final int numIteration = 75;
+   private static final int numIteration = 26;
 
-   private static HashMap<Integer, Integer> questionToAskerId = new HashMap<Integer, Integer>();
+   private static HashMap<Integer, Map<Date, VoteInstance>> uidTimestamp = new HashMap<Integer, Map<Date, VoteInstance>>();
    private static PreparedStatement preparedStatement;
-   private static int count = 1;
 
    private static Connection connectToDB() {
 
@@ -77,22 +80,38 @@ public class FExtraction {
 
    public static void main(String[] args) {
 
-	  System.out.println("Get question information...");
-	  getQuestionInformation();
+	  System.out.println("Get user information...");
+	  getUserInformation();
 	  System.out.println("Start the execution...");
 	  for (int i = 0; i < numIteration; ++i)
 		 execution(i, querySize);
 
    }
 
-   public static void getQuestionInformation() {
+   public static void getUserInformation() {
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "select id,owner_user_id from posts where post_type_id = 1");) {
+				  "SELECT \"timeStamp\", \"userId\", value, \"voteType\" FROM \"VoteHistory\"");) {
 		 System.out.println("Finish fetching query\nStart adding executed id");
+		 int uid, val, voteType;
+		 Date timestamp;
 		 if (rs != null) {
 			while (rs.next()) {
-			   questionToAskerId.put(rs.getInt(1), rs.getInt(2));
+			   timestamp = rs.getDate(1);
+			   uid = rs.getInt(2);
+			   val = rs.getInt(3);
+			   voteType = rs.getInt(4);
+
+			   if (!uidTimestamp.containsKey(uid))
+				  uidTimestamp.put(uid, new TreeMap<Date, VoteInstance>());
+
+			   if (uidTimestamp.get(uid).containsKey(timestamp)) {
+				  uidTimestamp.get(uid).get(timestamp).add(voteType, val);
+			   } else {
+				  uidTimestamp.get(uid).put(timestamp,
+						new VoteInstance(voteType, val));
+			   }
+
 			}
 		 }
 	  } catch (Exception e) {
@@ -100,20 +119,35 @@ public class FExtraction {
 	  }
    }
 
-   private static void addBatch(Date voteDate, int userId, int value,
-		 int voteType) {
+   private static void addBatch(VoteInstance inputVoteInstance, int postId) {
 	  try {
-		 preparedStatement.setInt(1, count);
-		 preparedStatement.setDate(2, voteDate);
-		 preparedStatement.setInt(3, userId);
-		 preparedStatement.setInt(4, value);
-		 preparedStatement.setInt(5, voteType);
+		 for (int x = 1; x < 13; ++x) {
+			preparedStatement.setInt(x, inputVoteInstance.VoteType[x - 1]);
+		 }
+		 preparedStatement.setInt(13, inputVoteInstance.VoteType[14]);
+		 preparedStatement.setInt(14, inputVoteInstance.VoteType[15]);
+		 preparedStatement.setInt(15, postId);
+
 		 preparedStatement.addBatch();
-		 ++count;
 	  } catch (SQLException e) {
 		 e.printStackTrace();
 	  }
 
+   }
+
+   private static VoteInstance getSummaryVoteInstance(Date postCreationDate,
+		 Map<Date, VoteInstance> userLog) {
+	  // Dummy VoteInstance : 0 votes 0 reputation
+	  VoteInstance output = new VoteInstance(14, 0);
+
+	  for (Map.Entry<Date, VoteInstance> entry : userLog.entrySet()) {
+		 if (entry.getKey().before(postCreationDate)) {
+			// If this is before the post creation
+			output.add(entry.getValue());
+		 }
+	  }
+
+	  return output;
    }
 
    // Divide dataset into small size
@@ -125,77 +159,38 @@ public class FExtraction {
 	  System.out.println("Execution from id >=" + (index * querySize)
 			+ " and id < " + ((index + 1) * querySize));
 	  try (Connection dbConnection = connectToDB();
-			ResultSet rs = executeQuery(
-				  dbConnection,
-				  "SELECT votes.vote_type_id, votes.creation_date, votes.user_id, votes.bounty_amount, posts.parent_id, posts.owner_user_id, posts.last_editor_user_id,posts.post_type_id FROM votes, posts WHERE votes.post_id = posts.id and votes.id >"
-						+ (index * querySize)
-						+ " and votes.id < "
+			ResultSet rs = executeQuery(dbConnection,
+				  "SELECT id, creation_date, owner_user_id FROM question WHERE id >"
+						+ (index * querySize) + " and id < "
 						+ ((index + 1) * querySize));) {
 
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 			preparedStatement = dbConnection
-				  .prepareStatement("INSERT INTO \"VoteHistory\" VALUES (?,?,?,?,?)");
+				  .prepareStatement("UPDATE question_features SET "
+						+ "\"acceptedAnswer\"=?, \"downVote\"=?, \"offensiveVote\"=?, "
+						+ "\"favoriteVote\"=?, \"closeVote\"=?, \"reopenVote\"=?, "
+						+ "\"bountyStartVote\"=?,  \"bountyCloseVote\"=?, "
+						+ "\"deletionVote\"=?, \"undeletionVote\"=?, \"spamVote\"=?, "
+						+ "\"moderatorReviewVote\"=?, \"approveEditVote\"=? WHERE id=?");
 
 			// Process through the resultset of query
-			int voteType, voteUserId, bountyAmount, postParentId, postUserId, postLastEditUserId, postTypeId;
-			Date voteDate;
+			int postId, userId, reputation;
+			int[] voteSum;
+			Date creationDate;
+			VoteInstance tmpVoteInstance;
 			while (rs.next()) {
-			   voteType = rs.getInt(1);
-			   voteDate = rs.getDate(2);
-			   voteUserId = rs.getInt(3);
-			   bountyAmount = rs.getInt(4);
-			   postParentId = rs.getInt(5);
-			   postUserId = rs.getInt(6);
-			   postLastEditUserId = rs.getInt(7);
-			   postTypeId = rs.getInt(8);
+			   // Dummy VoteInstance : 0 votes 0 reputation
+			   tmpVoteInstance = new VoteInstance(14, 0);
+			   postId = rs.getInt(1);
+			   creationDate = rs.getDate(2);
+			   userId = rs.getInt(3);
 
-			   switch (voteType) {
-			   case 1:
-				  // AcceptedAnswer Vote Type
-				  // +15 to answerer
-				  addBatch(voteDate, postUserId, 15, voteType);
-				  // +2 to questioner
-				  if (questionToAskerId.containsKey(postParentId))
-					 addBatch(voteDate, questionToAskerId.get(postParentId), 2,
-						   voteType);
-				  break;
-			   case 2:
-				  // Upvote
-				  // +5 if the post is answer
-				  if (postTypeId == 2)
-					 addBatch(voteDate, postUserId, 5, voteType);
-				  else
-					 // +10 if the post is question
-					 addBatch(voteDate, postUserId, 5, voteType);
-				  break;
-			   case 3:
-				  // Downvote
-				  // -2 to owner of the post
-				  addBatch(voteDate, postUserId, -2, voteType);
-				  break;
-			   case 8:
-				  // BountyStart
-				  // -BountyAmount to user who start it
-				  addBatch(voteDate, voteUserId, -bountyAmount, voteType);
-				  break;
-			   case 9:
-				  // BountyEnd
-				  // +BountyAmount to user who got it
-				  addBatch(voteDate, voteUserId, bountyAmount, voteType);
-				  break;
-			   case 16:
-				  // EditSuggestApproved
-				  // +2 to that user
-				  addBatch(voteDate, postLastEditUserId, 2, voteType);
-				  break;
-			   default:
-				  // Case Offensive, Favorite, Close, Reopen, Deletion,
-				  // Undeletion, Spam and ModReview
-				  addBatch(voteDate, postUserId, 0, voteType);
-				  break;
+			   if (uidTimestamp.containsKey(userId)) {
+				  tmpVoteInstance = getSummaryVoteInstance(creationDate,
+						uidTimestamp.get(userId));
 			   }
-
+			   addBatch(tmpVoteInstance, postId);
 			}
 			preparedStatement.executeBatch();
 		 }
