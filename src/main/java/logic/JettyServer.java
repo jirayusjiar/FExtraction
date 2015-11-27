@@ -161,7 +161,7 @@ public class JettyServer extends AbstractHandler {
 			   while (rs.next()) {
 				  tmpList.add(new ParsedTextEntity(rs.getInt(1), rs
 						.getString(2)));
-				  if (tmpList.size() == 200) {
+				  if (tmpList.size() == 100) {
 					 distributedDataList.add(tmpList);
 					 tmpList = new ArrayList<ParsedTextEntity>();
 				  }
