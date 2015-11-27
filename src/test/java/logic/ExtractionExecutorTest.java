@@ -4,6 +4,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.TreeMap;
+
+import org.junit.Test;
 
 public class ExtractionExecutorTest {
 
@@ -65,4 +69,13 @@ public class ExtractionExecutorTest {
 
    }
 
+   @Test
+   public void Test() {
+	  System.out.println("Yeah");
+	  Map<Integer, Integer[]> testMap = new TreeMap<Integer, Integer[]>();
+	  testMap.put(1, new Integer[] { 0, 0 });
+	  System.out.println(testMap.get(1)[1]);
+	  ++testMap.get(1)[1];
+	  System.out.println(testMap.get(1)[1]);
+   }
 }

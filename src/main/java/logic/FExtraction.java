@@ -10,14 +10,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import entity.VoteInstance;
-
 public class FExtraction {
    // Last index around 26 million == querySize*numIteration>26000000
    private static final int querySize = 1000000;
-   private static final int numIteration = 26;
+   private static final int numIteration = 12;
+   private static final String[] questionBadges = new String[] { "Altruist",
+		 "Benefactor", "Curious", "Inquisitive", "Socratic",
+		 "Favorite Question", "Stellar Question", "Investor", "Nice Question",
+		 "Good Question", "Great Question", "Popular Question",
+		 "Notable Question", "Famous Question", "Promoter", "Scholar",
+		 "Student", "Tumbleweed" };
 
-   private static HashMap<Integer, Map<Date, VoteInstance>> uidTimestamp = new HashMap<Integer, Map<Date, VoteInstance>>();
+   private static final String[] answerBadges = new String[] { "Enlightened",
+		 "Explainer", "Refiner", "Illuminator", "Generalist", "Guru",
+		 "Nice Answer", "Good Answer", "Great Answer", "Populist", "Reversal",
+		 "Revival", "Necromancer", "Self-Learner", "Teacher", "Tenacious",
+		 "Unsung Hero" };
+
+   private static HashMap<Integer, Map<Date, Integer[]>> uidTimestamp = new HashMap<Integer, Map<Date, Integer[]>>();
    private static PreparedStatement preparedStatement;
 
    private static Connection connectToDB() {
@@ -88,29 +98,48 @@ public class FExtraction {
 
    }
 
+   private static int getBadgeType(String badgeName) {
+	  // Badge type
+	  // 0 Question
+	  // 1 Answer
+	  // 2 None
+	  for (int x = 0; x < questionBadges.length; ++x)
+		 if (badgeName.equals(questionBadges[x]))
+			return 0;
+
+	  for (int x = 0; x < answerBadges.length; ++x)
+		 if (badgeName.equals(answerBadges[x]))
+			return 1;
+
+	  return 2;
+   }
+
    public static void getUserInformation() {
 	  try (Connection dbConnection = connectToDB();
 			ResultSet rs = executeQuery(dbConnection,
-				  "SELECT \"timeStamp\", \"userId\", value, \"voteType\" FROM \"VoteHistory\"");) {
+				  "SELECT user_id,name,date from badges");) {
 		 System.out.println("Finish fetching query\nStart adding executed id");
-		 int uid, val, voteType;
+		 int uid, index;
+		 String badgeName;
 		 Date timestamp;
 		 if (rs != null) {
 			while (rs.next()) {
-			   timestamp = rs.getDate(1);
-			   uid = rs.getInt(2);
-			   val = rs.getInt(3);
-			   voteType = rs.getInt(4);
+			   badgeName = rs.getString(2);
+			   index = getBadgeType(badgeName);
+
+			   if (index == 2)
+				  continue;
+
+			   timestamp = rs.getDate(3);
+			   uid = rs.getInt(1);
 
 			   if (!uidTimestamp.containsKey(uid))
-				  uidTimestamp.put(uid, new TreeMap<Date, VoteInstance>());
+				  uidTimestamp.put(uid, new TreeMap<Date, Integer[]>());
 
-			   if (uidTimestamp.get(uid).containsKey(timestamp)) {
-				  uidTimestamp.get(uid).get(timestamp).add(voteType, val);
-			   } else {
-				  uidTimestamp.get(uid).put(timestamp,
-						new VoteInstance(voteType, val));
-			   }
+			   if (!uidTimestamp.get(uid).containsKey(timestamp))
+				  uidTimestamp.get(uid).put(timestamp, new Integer[] { 0, 0 });
+
+			   ++uidTimestamp.get(uid).get(timestamp)[index];
 
 			}
 		 }
@@ -119,14 +148,12 @@ public class FExtraction {
 	  }
    }
 
-   private static void addBatch(VoteInstance inputVoteInstance, int postId) {
+   private static void addBatch(Integer[] badgeCount, int postId) {
 	  try {
-		 for (int x = 1; x < 13; ++x) {
-			preparedStatement.setInt(x, inputVoteInstance.VoteType[x - 1]);
-		 }
-		 preparedStatement.setInt(13, inputVoteInstance.VoteType[14]);
-		 preparedStatement.setInt(14, inputVoteInstance.VoteType[15]);
-		 preparedStatement.setInt(15, postId);
+		 preparedStatement.setInt(1, badgeCount[0] + badgeCount[1]);
+		 preparedStatement.setInt(2, badgeCount[1]);
+		 preparedStatement.setInt(3, badgeCount[0]);
+		 preparedStatement.setInt(4, postId);
 
 		 preparedStatement.addBatch();
 	  } catch (SQLException e) {
@@ -135,15 +162,16 @@ public class FExtraction {
 
    }
 
-   private static VoteInstance getSummaryVoteInstance(Date postCreationDate,
-		 Map<Date, VoteInstance> userLog) {
-	  // Dummy VoteInstance : 0 votes 0 reputation
-	  VoteInstance output = new VoteInstance(14, 0);
+   private static Integer[] getSummaryVoteInstance(Date postCreationDate,
+		 Map<Date, Integer[]> userLog) {
 
-	  for (Map.Entry<Date, VoteInstance> entry : userLog.entrySet()) {
+	  Integer[] output = new Integer[] { 0, 0 };
+
+	  for (Map.Entry<Date, Integer[]> entry : userLog.entrySet()) {
 		 if (entry.getKey().before(postCreationDate)) {
 			// If this is before the post creation
-			output.add(entry.getValue());
+			output[0] += entry.getValue()[0];
+			output[1] += entry.getValue()[1];
 		 }
 	  }
 
@@ -167,30 +195,24 @@ public class FExtraction {
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
 			preparedStatement = dbConnection
-				  .prepareStatement("UPDATE question_features SET "
-						+ "\"acceptedAnswer\"=?, \"downVote\"=?, \"offensiveVote\"=?, "
-						+ "\"favoriteVote\"=?, \"closeVote\"=?, \"reopenVote\"=?, "
-						+ "\"bountyStartVote\"=?,  \"bountyCloseVote\"=?, "
-						+ "\"deletionVote\"=?, \"undeletionVote\"=?, \"spamVote\"=?, "
-						+ "\"moderatorReviewVote\"=?, \"approveEditVote\"=? WHERE id=?");
+				  .prepareStatement("UPDATE question_features SET \"totalBadge\"=?, "
+						+ "\"answerBadge\"=?, \"questionBadge\"=? WHERE id=?");
 
 			// Process through the resultset of query
 			int postId, userId, reputation;
-			int[] voteSum;
+			Integer[] badgeSum = null;
 			Date creationDate;
-			VoteInstance tmpVoteInstance;
 			while (rs.next()) {
-			   // Dummy VoteInstance : 0 votes 0 reputation
-			   tmpVoteInstance = new VoteInstance(14, 0);
+
 			   postId = rs.getInt(1);
 			   creationDate = rs.getDate(2);
 			   userId = rs.getInt(3);
 
 			   if (uidTimestamp.containsKey(userId)) {
-				  tmpVoteInstance = getSummaryVoteInstance(creationDate,
+				  badgeSum = getSummaryVoteInstance(creationDate,
 						uidTimestamp.get(userId));
 			   }
-			   addBatch(tmpVoteInstance, postId);
+			   addBatch(badgeSum, postId);
 			}
 			preparedStatement.executeBatch();
 		 }
