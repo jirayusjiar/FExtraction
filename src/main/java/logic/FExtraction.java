@@ -175,7 +175,7 @@ public class FExtraction {
 		 if (rs != null) {
 			preparedStatement = dbConnection
 				  .prepareStatement("UPDATE question_features SET "
-						+ "\"acceptedAnswer\"=?, \"downVote\"=?, \"offensiveVote\"=?, "
+						+ "\"acceptedAnswer\"=?, \"upVote\"=?,\"downVote\"=?, \"offensiveVote\"=?, "
 						+ "\"favoriteVote\"=?, \"closeVote\"=?, \"reopenVote\"=?, "
 						+ "\"bountyStartVote\"=?,  \"bountyCloseVote\"=?, "
 						+ "\"deletionVote\"=?, \"undeletionVote\"=?, \"spamVote\"=?, "
