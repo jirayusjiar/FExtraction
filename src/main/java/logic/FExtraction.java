@@ -196,7 +196,7 @@ public class FExtraction {
 			ResultSet rs = executeQuery(dbConnection,
 				  "SELECT id, creation_date, owner_user_id FROM question WHERE id >"
 						+ (index * querySize) + " and id < "
-						+ ((index + 1) * querySize));) {
+						+ ((index + 1) * querySize + 1));) {
 
 		 System.out.println("Finish fetching query\nStart processing");
 		 if (rs != null) {
