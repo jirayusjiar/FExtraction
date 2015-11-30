@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.junit.Test;
+
 public class ExtractionExecutorTest {
 
    private static Connection connectToDB() {
@@ -65,4 +67,8 @@ public class ExtractionExecutorTest {
 
    }
 
+   @Test
+   public void TestTimeDiff() {
+	  System.out.println((2597598 / (60 * 24)));
+   }
 }
